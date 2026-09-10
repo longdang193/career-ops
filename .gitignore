@@ -197,6 +197,9 @@ plan/
 documents/*
 !documents/.gitkeep
 !documents/README.md
+# Private candidate source data — never commit.
+data.private/
+.career-ops-data
 # Intake fingerprints — the recorded source filenames may themselves carry
 # PII (e.g. cv/jane-doe-master-cv.pdf). #1723
 data/intake-state.json
