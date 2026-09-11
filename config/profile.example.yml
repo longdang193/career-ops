@@ -204,6 +204,14 @@ cover_letter:
   # cover-letter-template.<name>.md. Unset -> built-in HTML template.
   # template: modern
 
+  # Global content limits shared by all cover-letter templates. Template-local
+  # evidence_min/evidence_max metadata controls presentation-specific block counts.
+  constraints:
+    min_words: 320
+    target_words: 370
+    max_words: 420
+    max_evidence_claims: 4
+
   # Your current professional domain (used to detect domain gaps vs the JD).
   # Plain English, e.g. "digital media", "fintech", "healthcare IT".
   primary_domain: "your current domain"

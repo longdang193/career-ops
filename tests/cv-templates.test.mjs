@@ -9,6 +9,7 @@ import {
   KINDS,
   listTemplates,
   parseMeta,
+  getTemplateContract,
   validateTemplate,
   resolveTemplate,
   loadProfileDefault,
@@ -83,6 +84,44 @@ test('parseMeta: reads header key/value, empty when absent', () => {
   const dir = fixtureDir();
   assert.equal(parseMeta(join(dir, 'cv-template.executive-authority.html')).name, 'Executive Authority');
   assert.deepEqual(parseMeta(join(dir, 'cv-template.html')), {});
+});
+
+test('getTemplateContract: reads typed cover evidence metadata and defaults', () => {
+  const dir = fixtureDir();
+  const custom = join(dir, 'cover-letter-template.custom.md');
+  writeFileSync(custom, `<!-- career-ops-template
+name: Custom
+evidence_min: 2
+evidence_max: 3
+evidence_style: prose
+-->`);
+  assert.deepEqual(getTemplateContract(custom), {
+    evidenceMin: 2,
+    evidenceMax: 3,
+    evidenceStyle: 'prose',
+  });
+  assert.deepEqual(getTemplateContract(join(dir, 'cover-letter-template.md')), {
+    evidenceMin: 0,
+    evidenceMax: 4,
+    evidenceStyle: 'bullets',
+  });
+});
+
+test('getTemplateContract: rejects invalid cover evidence metadata', () => {
+  const dir = fixtureDir();
+  const custom = join(dir, 'cover-letter-template.invalid.md');
+  writeFileSync(custom, `<!-- career-ops-template
+evidence_min: 4
+evidence_max: 2
+evidence_style: cards
+-->`);
+  assert.throws(() => getTemplateContract(custom), /Invalid cover template evidence_max/);
+  writeFileSync(custom, `<!-- career-ops-template
+evidence_min: 2
+evidence_max: 3
+evidence_style: cards
+-->`);
+  assert.throws(() => getTemplateContract(custom), /Invalid cover template evidence_style/);
 });
 
 test('validateTemplate: ok when required placeholders present', () => {

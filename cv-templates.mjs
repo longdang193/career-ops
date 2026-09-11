@@ -81,6 +81,30 @@ export function parseMeta(path) {
   return meta;
 }
 
+const DEFAULT_COVER_CONTRACT = Object.freeze({
+  evidenceMin: 0,
+  evidenceMax: 4,
+  evidenceStyle: 'bullets',
+});
+
+export function getTemplateContract(path, kind = 'cover') {
+  if (kind !== 'cover') return {};
+  const meta = parseMeta(path);
+  const evidenceMin = meta.evidence_min == null ? DEFAULT_COVER_CONTRACT.evidenceMin : Number(meta.evidence_min);
+  const evidenceMax = meta.evidence_max == null ? DEFAULT_COVER_CONTRACT.evidenceMax : Number(meta.evidence_max);
+  const evidenceStyle = meta.evidence_style || DEFAULT_COVER_CONTRACT.evidenceStyle;
+  if (!Number.isInteger(evidenceMin) || evidenceMin < 0) {
+    throw new Error(`Invalid cover template evidence_min: ${meta.evidence_min}`);
+  }
+  if (!Number.isInteger(evidenceMax) || evidenceMax < evidenceMin) {
+    throw new Error(`Invalid cover template evidence_max: ${meta.evidence_max}`);
+  }
+  if (!['bullets', 'prose'].includes(evidenceStyle)) {
+    throw new Error(`Invalid cover template evidence_style: ${evidenceStyle}`);
+  }
+  return { evidenceMin, evidenceMax, evidenceStyle };
+}
+
 // Build the entry a discovered template file contributes.
 function entryFor(parsed, path, pack) {
   const meta = parseMeta(path);
@@ -219,16 +243,19 @@ export function validateTemplate(path, kind) {
   return { ok: missing.length === 0, missing };
 }
 
+export function loadProfileConfig({ profilePath = DEFAULT_PROFILE_PATH } = {}) {
+  if (!existsSync(profilePath)) return {};
+  try {
+    return yaml.load(readFileSync(profilePath, 'utf-8')) || {};
+  } catch {
+    return {};
+  }
+}
+
 export function loadProfileDefault(kind, { profilePath = DEFAULT_PROFILE_PATH } = {}) {
   const cfg = KINDS[kind];
   if (!cfg) throw new Error(`Unknown template kind: ${kind}`);
-  if (!existsSync(profilePath)) return null;
-  let doc;
-  try {
-    doc = yaml.load(readFileSync(profilePath, 'utf-8')) || {};
-  } catch {
-    return null;
-  }
+  const doc = loadProfileConfig({ profilePath });
   let node = doc;
   for (const key of cfg.profileKey) node = node?.[key];
   return typeof node === 'string' && node.trim() ? node.trim() : null;
