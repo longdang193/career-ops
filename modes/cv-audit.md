@@ -1,4 +1,4 @@
-# Shared Mode: cv-audit — Optional LLM CV Validation
+# Shared Mode: cv-audit — Optional LLM Document Validation
 
 Run when the invocation carries `--llm-audit`, the legacy PDF flag
 `--hm-audit`, `cv.llm_audit.enabled` is true, or `modes/_custom.md` explicitly
@@ -21,14 +21,14 @@ overrides, not profile mutations.
 
 ## Purpose
 
-Review a job-tailored CV before final delivery. The audit judges relevance,
-clarity, evidence strength, seniority fit, and recruiter readability. It does
-not replace deterministic fact or ATS checks.
+Review a job-tailored CV or cover letter before final delivery. The audit judges
+relevance, clarity, evidence strength, role fit, and recruiter readability. It
+does not replace deterministic fact or ATS checks.
 
 ## Source Boundary
 
 - Read `cv.md` as the canonical CV source.
-- Audit the tailored artifact, never `cv.md` by itself.
+- Audit the tailored artifact, never the canonical source by itself.
 - Use the JD and `jd-skill-gap.mjs` result as role context.
 - Never modify `cv.md` from audit output.
 - Never treat an LLM recommendation as evidence of a skill or achievement.
@@ -60,6 +60,9 @@ limitation; empty buckets do not prove fit.
 3. `cv.md` and the factual scope files loaded by the parent mode.
 4. The `jd-skill-gap.mjs` result, including `existing`,
    `supportedByResume`, and `gap` buckets.
+
+The parent mode must set `artifact_type` to `cv` or `cover_letter` before
+dispatch. The same result contract and cycle budget apply to both.
 
 Never parse the final PDF as the primary audit input. Use the Markdown or
 structured source that produced it.
@@ -93,6 +96,8 @@ Evaluate:
 - seniority and scope fit
 - contradictions, ambiguity, and missing sections
 - readability for a fast recruiter scan
+- for cover letters: company-specific motivation, evidence-to-claim fit,
+  tone, word-count discipline, and unnecessary repetition
 
 ## Result Contract
 
@@ -101,6 +106,7 @@ Return structured data before presenting prose:
 ```json
 {
   "schema_version": "cv-audit.v1",
+  "artifact_type": "cv | cover_letter",
   "status": "pass | review | fail",
   "score": 1,
   "review_cycle": 1,
@@ -173,4 +179,4 @@ the SHA-256 hash of the audited source artifact.
 - ATS structure scoring — `verify-ats.mjs` owns this
 - automatic CV rewriting
 - automatic publication, submission, or email delivery
-- auditing the untailored canonical CV
+- auditing an untailored canonical source artifact

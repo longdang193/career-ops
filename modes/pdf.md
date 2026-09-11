@@ -367,10 +367,11 @@ If the user says yes, run the full cover letter flow from `modes/cover.md` in sl
 4. Surface any gaps (Step 5)
 5. Ask the four prompts: why / problems / approach / tone (Step 6)
 6. Draft in chat, wait for approval (Steps 7-8)
-7. Generate cover letter PDF via `node generate-cover-letter.mjs` (Step 9)
-8. Report both PDF paths
+ 7. Generate the approved cover letter Markdown via `node generate-cover-letter.mjs --markdown` (Step 9)
+ 8. Offer an optional PDF derivative only after Markdown generation and audit gates pass
+ 9. Report the Markdown path and PDF path when a PDF was requested
 
-Do not auto-generate the cover letter PDF without going through the interactive steps above.
+Do not auto-generate cover-letter output without going through the interactive steps above.
 
 ## Post-generation
 

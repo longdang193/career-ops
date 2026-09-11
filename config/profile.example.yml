@@ -129,6 +129,10 @@ spend_tier: standard
 
 cv:
   output_format: "html" # "html" (default), "latex", or "text" (tailored markdown, no PDF)
+  # Shared optional LLM audit for tailored CVs and cover letters.
+  # llm_audit:
+  #   enabled: false
+  #   max_cycles: 2
   # (Optional) Canva resume design ID for visual CV generation via /career-ops pdf.
   # Find it in your Canva design URL: https://www.canva.com/design/DAxxxxxxx/...
   # The ID starts with "D" and is 11 characters long.
@@ -196,8 +200,8 @@ cover_letter:
   # appears in the letter.
   notice_period_days: 30
   # Which cover-letter template to use by default. Kebab-case name of a file in
-  # templates/ named cover-letter-template.<name>.html. Unset -> built-in
-  # templates/cover-letter-template.html.
+  # templates/ named cover-letter-template.<name>.html or
+  # cover-letter-template.<name>.md. Unset -> built-in HTML template.
   # template: modern
 
   # Your current professional domain (used to detect domain gaps vs the JD).

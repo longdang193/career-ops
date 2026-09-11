@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * generate-cover-letter.mjs — Renders a cover letter payload to PDF.
+ * generate-cover-letter.mjs — Writes Markdown or renders a cover letter PDF.
  *
  * Usage:
  *   node generate-cover-letter.mjs --payload payload.json
  *   node generate-cover-letter.mjs --payload payload.json --out output/slug-cover.pdf
  *
- * Fills templates/cover-letter-template.html with the payload, then renders
- * it to PDF via the same Playwright pipeline used for CVs (generate-pdf.mjs).
+ * Fills the selected cover-letter template. Markdown stays canonical; PDF
+ * output uses the same Playwright pipeline used for CVs.
  *
  * `buildHtml` and `safeOutputPath` are exported as pure functions so the
  * template and --out path guard can be tested without loading Playwright
  * (renderHtmlToPdf is imported lazily inside main).
  */
 
-import { readFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname, resolve, join, relative, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
@@ -143,6 +143,16 @@ function buildAchievementsBlock(achievements) {
   return `<ul class="achievements">\n${items}\n  </ul>`;
 }
 
+/** Build the Markdown achievement list used by Markdown-first templates. */
+function buildMarkdownAchievementsBlock(achievements) {
+  if (!achievements || !achievements.length) return "";
+  return achievements.map((ach) => {
+    const lead = escapeHtml((ach.lead || "").replace(/,\s*$/, ""));
+    const impact = escapeHtml(ach.impact || "");
+    return `- **${lead},** ${impact}`;
+  }).join("\n");
+}
+
 /** Build the optional footnotes block with escaped links. */
 function buildFootnotesBlock(footnotes) {
   if (!footnotes || !footnotes.length) return "";
@@ -180,6 +190,18 @@ function buildSignatureBlock(signature, candidateName) {
   return `<p class="signature">${lines.join("<br>")}</p>`;
 }
 
+/** Build the Markdown sign-off used by Markdown-first templates. */
+function buildMarkdownSignatureBlock(signature, candidateName) {
+  if (!signature) return "";
+  const isObject = typeof signature === "object" && signature !== null;
+  const valediction = isObject ? signature.valediction : signature;
+  const name = (isObject ? signature.name : "") || candidateName || "";
+  const lines = [];
+  if (valediction) lines.push(escapeHtml(valediction));
+  if (name) lines.push(`**${escapeHtml(name)}**`);
+  return lines.join("\n");
+}
+
 // Resolve the cover-letter template through the shared resolver so a
 // `cover_letter.template` profile default, an explicit `payload.template`, and
 // installed template packs are all honored. Any resolver failure (no profile,
@@ -187,23 +209,21 @@ function buildSignatureBlock(signature, candidateName) {
 // original hardcoded behavior.
 export function resolveCoverTemplatePath(payload = {}, opts = {}) {
   const scriptDir = dirname(fileURLToPath(import.meta.url));
-  const base = resolve(scriptDir, "templates", "cover-letter-template.html");
+  const format = opts.format || "html";
+  const base = resolve(scriptDir, "templates", `cover-letter-template.${format}`);
   try {
-    return resolveTemplate("cover", payload.template, { format: "html", fallback: true, ...opts });
+    return resolveTemplate("cover", payload.template, { format, fallback: true, ...opts });
   } catch {
     return base;
   }
 }
 
-export function buildHtml(payload, templatePath) {
+function buildReplacements(payload) {
   _require(payload, ["candidate", "letter"], "payload");
   const candidate = payload.candidate;
   const letter = payload.letter;
   _require(candidate, ["name"], "candidate");
   _require(letter, ["role_title", "opening", "profile_intro"], "letter");
-
-  const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
-  let html = readFileSync(resolvedPath, "utf-8");
 
   // Optional salutation (e.g. "Dear Jane Smith,"). Omitted -> no salutation,
   // preserving the original behavior for payloads that don't set it.
@@ -222,8 +242,13 @@ export function buildHtml(payload, templatePath) {
 
   const replacements = {
     "{{NAME}}": escapeHtml(candidate.name),
+    "{{SUBTITLE}}": escapeHtml(candidate.subtitle || ""),
+    "{{QUOTE}}": escapeHtml(candidate.quote || ""),
     "{{CONTACT_LINE}}": buildContactLine(candidate),
     "{{CREDENTIALS_BLOCK}}": buildCredentialsBlock(candidate),
+    "{{RECIPIENT_TEAM}}": escapeHtml(letter.recipient_team || "Recruitment Team"),
+    "{{COMPANY}}": escapeHtml(letter.company || ""),
+    "{{COMPANY_SHORT_NAME}}": escapeHtml(letter.company_short_name || letter.company || ""),
     "{{ROLE_TITLE}}": escapeHtml(letter.role_title),
     "{{DATELINE}}": buildDateline(letter),
     "{{GREETING_BLOCK}}": greetingBlock,
@@ -237,6 +262,11 @@ export function buildHtml(payload, templatePath) {
     "{{FOOTNOTES_BLOCK}}": buildFootnotesBlock(letter.footnotes),
   };
 
+  return replacements;
+}
+
+function renderTemplate(source, replacements) {
+
   // Single-pass substitution: each {{TOKEN}} is replaced exactly once against
   // the original template. A single regex pass (rather than iterative
   // split/join) ensures a substituted value that itself contains a {{TOKEN}}
@@ -249,7 +279,7 @@ export function buildHtml(payload, templatePath) {
   // the same sequence appearing inside a substituted value, which is exactly
   // what the single pass above is careful to leave literal.
   const unresolved = new Set();
-  const rendered = html.replace(/\{\{[A-Z_]+\}\}/g, (token) => {
+  const rendered = source.replace(/\{\{[A-Z_]+\}\}/g, (token) => {
     const value = replacements[token];
     if (value == null) {
       unresolved.add(token);
@@ -266,13 +296,31 @@ export function buildHtml(payload, templatePath) {
   return rendered;
 }
 
-/** Parse a payload, run the fact gate, and render the cover-letter PDF. */
+export function buildHtml(payload, templatePath) {
+  const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
+  return renderTemplate(readFileSync(resolvedPath, "utf-8"), buildReplacements(payload));
+}
+
+export function buildMarkdown(payload, templatePath) {
+  const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
+  const replacements = buildReplacements(payload);
+  replacements["{{GREETING_BLOCK}}"] = escapeHtml(payload.letter.greeting || "");
+  replacements["{{ACHIEVEMENTS_BLOCK}}"] = buildMarkdownAchievementsBlock(payload.letter.achievements);
+  replacements["{{PROBLEMS_BLOCK}}"] = escapeHtml(payload.letter.problems_section || "");
+  replacements["{{CLOSING_BLOCK}}"] = escapeHtml(payload.letter.closing || "");
+  replacements["{{LANGUAGE_CLOSING_BLOCK}}"] = escapeHtml(payload.letter.language_closing || "");
+  replacements["{{SIGNATURE_BLOCK}}"] = buildMarkdownSignatureBlock(payload.letter.signature, payload.candidate.name);
+  return renderTemplate(readFileSync(resolvedPath, "utf-8"), replacements);
+}
+
+/** Parse a payload, run the fact gate, and write Markdown or render PDF. */
 async function main() {
   const { values: args } = parseArgs({
     options: {
       payload: { type: "string" },
       out:     { type: "string" },
       format:  { type: "string" },
+      markdown:{ type: "boolean" },
       report:  { type: "string" },
       help:    { type: "boolean", short: "h" },
     },
@@ -283,10 +331,12 @@ async function main() {
     console.log(`
 Usage:
   node generate-cover-letter.mjs --payload payload.json [--out output/path.pdf] [--format letter|a4] [--report NNN]
+  node generate-cover-letter.mjs --payload payload.json --markdown [--out output/path.md]
 
   --payload   Path to the JSON payload file (required)
   --out       Override output path from payload (optional)
   --format    Override output PDF page format (letter|a4, default: a4)
+  --markdown  Write the approved Markdown artifact instead of rendering PDF
   --report    Link the PDF to a tracker report number in data/pdf-index.tsv
 `);
     process.exit(args.help ? 0 : 1);
@@ -299,6 +349,7 @@ Usage:
   }
 
   const payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
+  const markdown = Boolean(args.markdown);
 
   if (args.out) {
     payload.output_path = args.out;
@@ -307,7 +358,7 @@ Usage:
   if (!payload.output_path) {
     const company = (payload.letter?.company || "company").toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const role    = (payload.letter?.role_title || "role").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30);
-    payload.output_path = join(OUTPUT_ROOT, `${company}-${role}-cover.pdf`);
+    payload.output_path = join(OUTPUT_ROOT, `${company}-${role}-cover.${markdown ? "md" : "pdf"}`);
   } else {
     try {
       payload.output_path = safeOutputPath(payload.output_path);
@@ -320,11 +371,11 @@ Usage:
   if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
 
   try {
-    const html = buildHtml(payload);
+    const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
     // Cover letters are candidate-facing documents too. Reuse the CV fact
     // validator before importing Playwright or writing a PDF so a failed gate
     // cannot leave behind a misleading artifact.
-    const factCheck = assertFacts(html, { label: "cover letter" });
+    const factCheck = assertFacts(artifact, { label: "cover letter" });
     // Ahead of the verdict, because it qualifies it: with no config the phrase
     // lists are empty, so a silent gate here covers metrics and facts only.
     if (factCheck.configMissing) {
@@ -336,18 +387,23 @@ Usage:
         console.error(`  - advisory phrase: ${phrase}`);
       }
     }
+    if (markdown) {
+      writeFileSync(payload.output_path, artifact, "utf-8");
+      console.log(`\\nCover letter Markdown: ${payload.output_path}`);
+      return;
+    }
     // Imported only after fact validation so a failed gate does not load
     // Playwright or create a PDF artifact.
     const { renderHtmlToPdf } = await import("./generate-pdf.mjs");
     const outputPath = resolve(payload.output_path);
-    await renderHtmlToPdf(html, outputPath, {
+    await renderHtmlToPdf(artifact, outputPath, {
       format: args.format || "a4",
       reportNum: args.report,
       inputPath: payloadPath,
     });
     console.log(`\nCover letter PDF: ${payload.output_path}`);
   } catch (err) {
-    console.error("ERROR generating cover letter PDF:");
+    console.error(`ERROR generating cover letter ${markdown ? "Markdown" : "PDF"}:`);
     console.error(err.message);
     process.exit(1);
   }
