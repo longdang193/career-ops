@@ -5,6 +5,13 @@ Works in two modes:
 - **Slug mode:** `/career-ops cover {slug}` — loads the existing evaluation report draft as a starting point
 - **Paste mode:** `/career-ops cover` or JD pasted directly — starts from scratch
 
+Optional pass:
+- **`--llm-audit`:** runs the shared optional document audit in
+  `modes/cv-audit.md` against the generated Markdown. Off by default; the
+  profile setting `cv.llm_audit.enabled: true` enables it persistently.
+
+Markdown is the canonical cover-letter artifact. PDF is an optional derivative.
+
 ---
 
 ## Step 0 — JD Gate (mandatory)
@@ -27,6 +34,7 @@ Do not generate a generic or placeholder cover letter under any circumstances.
 
 Read `config/profile.yml` for:
 - `candidate.name`, `email`, `phone`, `location`, `linkedin`, `github`
+- optional `candidate.subtitle` and `candidate.quote` for the Markdown header
 - `candidate.credentials` (derive from cv.md Education + Certifications if not in profile.yml)
 - `cover_letter.notice_period_days` (default: omit if key absent)
 - `cover_letter.primary_domain` (default: infer from cv.md if absent)
@@ -207,9 +215,10 @@ Format: `**Bold lead phrase,** one sentence of impact with metric.` This describ
 
 ---
 
-## Step 8 — Draft the letter in chat (mandatory before PDF)
+## Step 8 — Draft the letter in chat (mandatory before output)
 
-Write the full letter as plain text in the chat. Follow this structure:
+Write the full letter as Markdown in the chat. Use the selected template's
+section order and styling. The reference structure is:
 
 ```text
 [Candidate Name]
@@ -248,9 +257,9 @@ Availability + any gap acknowledgments the user chose to include (Step 5).
 Only if user confirmed inclusion in Step 5. Written in that language. Italic in PDF.
 ```
 
-End the draft with: "How does this read? Once you approve I'll generate the PDF."
+End the draft with: "How does this read? Once you approve I'll save the Markdown artifact."
 
-**Do NOT generate any PDF until the user explicitly approves.** Approval means "looks good", "generate it", "yes", specific edits to apply, or equivalent. A question or silence is not approval.
+**Do NOT save or render any final artifact until the user explicitly approves.** Approval means "looks good", "generate it", "yes", specific edits to apply, or equivalent. A question or silence is not approval.
 
 ---
 
@@ -275,24 +284,33 @@ contracts, plus the bans that are stricter than the shared list.
 
 ---
 
-Resolve the cover-letter template with the shared resolver (do not hardcode `cover-letter-template.html`):
+Resolve the Markdown cover-letter template with the shared resolver (do not
+hardcode a template path):
 
-- If the user named a template, run: `node cv-templates.mjs resolve cover "<name>"`
-- Otherwise run: `node cv-templates.mjs resolve cover` (returns the `cover_letter.template` default, or the base template when unset).
+- If the user named a template, run: `node cv-templates.mjs resolve cover "<name>" --format=md`
+- Otherwise run: `node cv-templates.mjs resolve cover --format=md` (returns the
+  `cover_letter.template` default, or the base Markdown template when unset).
 
 Fill the resolved template's `{{...}}` placeholders. A non-zero exit means the named template is missing/invalid — surface it, do not silently fall back.
 
-## Step 9 — Generate PDF
+## Step 9 — Generate Markdown
 
 Only after explicit user approval.
 
-Before rendering, run the shared fact validator against the assembled cover
-letter HTML. It checks metric-like claims plus explicitly asserted employers,
-titles, and tools against `cv.md`, `article-digest.md`, and the optional
-`config/cv-facts.json` allowlist. The validator returns a stable `pass`, `warn`,
-or `block` verdict. Advisory `warn_phrases` do not stop PDF generation; a
-`block` verdict does, so add the missing evidence or obtain a verified
-allowlist exception first.
+Before writing, run the shared fact validator against the assembled Markdown.
+It checks metric-like claims plus explicitly asserted employers, titles, and
+tools against `cv.md`, `article-digest.md`, and the optional `config/cv-facts.json`
+allowlist. The validator returns a stable `pass`, `warn`, or `block` verdict.
+Advisory `warn_phrases` do not stop output; a `block` verdict does, so add the
+missing evidence or obtain a verified allowlist exception first.
+
+If `--llm-audit` is present or `cv.llm_audit.enabled: true`, run
+`modes/cv-audit.md` with `artifact_type: cover_letter` after the fact gate.
+Use the same `review_cycle`, `max_review_cycles`, `artifact_hash`, user
+decision, and cycle-2 cap as CV generation. The audit is advisory unless it
+returns `fail` with a blocking issue. If the user accepts a rewrite, regenerate
+only the derived Markdown, rerun deterministic checks, and never modify `cv.md`
+or the report's archived JD.
 
 Assemble the JSON payload:
 
@@ -305,11 +323,15 @@ Assemble the JSON payload:
     "location": "{from profile.yml}",
     "linkedin": "{from profile.yml, omit if empty}",
     "github": "{from profile.yml, omit if empty}",
-    "credentials": ["{degree}", "{MBA}", "{cert}"]
+    "credentials": ["{degree}", "{MBA}", "{cert}"],
+    "subtitle": "{optional profile subtitle}",
+    "quote": "{optional profile quote}"
   },
   "letter": {
     "role_title": "{exact from JD}",
     "company": "{company name}",
+    "company_short_name": "{short display name for the WHY heading}",
+    "recipient_team": "{recruitment team or named hiring manager}",
     "city": "{JD city}",
     "date": "{YYYY-MM-DD}",
     "greeting": "{optional salutation, e.g. 'Dear Jane Smith,'; omit the key to skip the salutation}",
@@ -322,7 +344,7 @@ Assemble the JSON payload:
     "closing": "{approved closing}",
     "language_closing": "{approved language sentence or null}"
   },
-  "output_path": "output/{company-slug}-{role-slug}-cover.pdf"
+  "output_path": "output/{company-slug}-{role-slug}-cover.md"
 }
 ```
 
@@ -332,16 +354,27 @@ Write payload to `/tmp/cover-payload-{company-slug}.json`.
 
 Run:
 ```bash
-node generate-cover-letter.mjs --payload /tmp/cover-payload-{company-slug}.json
+node generate-cover-letter.mjs --payload /tmp/cover-payload-{company-slug}.json --markdown
 ```
 
 Report the output path and file size.
+
+## Optional PDF derivative
+
+Only when the user asks for PDF, render the approved content after Markdown is
+saved and the fact/audit gates pass:
+
+```bash
+node generate-cover-letter.mjs --payload /tmp/cover-payload-{company-slug}.json
+```
+
+The Markdown artifact remains the source of truth; the PDF is disposable output.
 
 ---
 
 ## Step 10 — Post-generation note
 
-After the PDF is confirmed, add a brief note:
+After the Markdown is confirmed, add a brief note:
 
 - Any JD keywords from Step 4 that could not be incorporated naturally (flag for manual review)
 - Which gap acknowledgments were included and which were omitted, and why
@@ -357,4 +390,4 @@ When invoked as `/career-ops cover {slug}`:
 2. Extract the `## Cover Letter Draft` section — use it as a pre-populated starting point for the draft
 3. Run all steps as normal (research, keywords, prompts, gaps) — the draft is a starting point, not the final output
 4. When presenting the draft in Step 8, show what was auto-generated and what was changed based on the user's answers
-5. After PDF generation, update the report's `## Cover Letter Draft` section with a note: `PDF generated: output/{path} on {date}`
+5. After Markdown generation, update the report's `## Cover Letter Draft` section with a note: `Markdown generated: output/{path} on {date}`. Add a separate PDF note only when a PDF derivative is requested.

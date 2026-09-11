@@ -36,10 +36,10 @@ const payload = () => ({
 });
 
 test('throws on a template token the renderer cannot fill', () => {
-  const tpl = writeTemplate('<p>{{OPENING}}</p><p>Dear team at {{COMPANY}},</p>');
+  const tpl = writeTemplate('<p>{{OPENING}}</p><p>Dear team at {{COMPANY_NAME}},</p>');
   assert.throws(
     () => buildHtml(payload(), tpl),
-    /Unresolved placeholders: \{\{COMPANY\}\}/,
+    /Unresolved placeholders: \{\{COMPANY_NAME\}\}/,
     'a custom template with an unsupported token must fail loudly, not render it verbatim',
   );
 });
@@ -55,9 +55,9 @@ test('a {{TOKEN}} inside a substituted value stays literal and is not flagged', 
 });
 
 test('reports every unresolved token, not just the first', () => {
-  const tpl = writeTemplate('<p>{{COMPANY}}</p><p>{{HIRING_MANAGER}}</p><p>{{OPENING}}</p>');
+  const tpl = writeTemplate('<p>{{COMPANY_NAME}}</p><p>{{HIRING_MANAGER}}</p><p>{{OPENING}}</p>');
   assert.throws(() => buildHtml(payload(), tpl), (err) => {
-    assert.match(err.message, /\{\{COMPANY\}\}/);
+    assert.match(err.message, /\{\{COMPANY_NAME\}\}/);
     assert.match(err.message, /\{\{HIRING_MANAGER\}\}/);
     return true;
   });

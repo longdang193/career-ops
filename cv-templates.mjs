@@ -19,11 +19,13 @@ export const KINDS = {
   cv: {
     prefix: 'cv-template',
     profileKey: ['cv', 'template'],
+    formats: ['html', 'tex'],
     required: ['NAME', 'EXPERIENCE', 'EDUCATION'],
   },
   cover: {
     prefix: 'cover-letter-template',
     profileKey: ['cover_letter', 'template'],
+    formats: ['html', 'md'],
     required: ['NAME', 'ROLE_TITLE', 'OPENING'],
   },
 };
@@ -47,17 +49,17 @@ export function kebab(display) {
 // The only template formats the resolver recognizes. `format` reaches path
 // construction (fileFor) unmodified, so it must be allowlisted or a value like
 // `--format=../../etc/passwd` would traverse out of the templates dir.
-const VALID_FORMATS = new Set(['html', 'tex']);
-function assertFormat(format) {
-  if (!VALID_FORMATS.has(format)) {
-    throw new Error(`Unsupported template format: ${format} (expected html or tex)`);
+function assertFormat(format, kind) {
+  const cfg = KINDS[kind];
+  if (!cfg.formats.includes(format)) {
+    throw new Error(`Unsupported template format for ${kind}: ${format} (expected ${cfg.formats.join(' or ')})`);
   }
 }
 
 // filename → {name, format} | null. Base "cv-template.html" → name "standard";
-// "cv-template.<name>.html" → that name. Only html/tex are recognized.
-function parseFilename(prefix, file) {
-  const m = file.match(new RegExp(`^${prefix}(?:\\.([a-z0-9-]+))?\\.(html|tex)$`));
+// "cv-template.<name>.html" → that name.
+function parseFilename(prefix, file, formats) {
+  const m = file.match(new RegExp(`^${prefix}(?:\\.([a-z0-9-]+))?\\.(${formats.join('|')})$`));
   if (!m) return null;
   return { name: m[1] || 'standard', format: m[2] };
 }
@@ -154,7 +156,7 @@ function discover(kind, { dir, format }) {
   // Flat templates. Unchanged from before packs existed, including the fact
   // that a symlinked file is read through like any other.
   for (const d of top) {
-    const parsed = parseFilename(cfg.prefix, d.name);
+    const parsed = parseFilename(cfg.prefix, d.name, cfg.formats);
     if (parsed) claim(parsed, resolve(dir, d.name), null);
   }
 
@@ -177,7 +179,7 @@ function discover(kind, { dir, format }) {
       continue; // unreadable directory is not a pack
     }
     for (const file of inner) {
-      const parsed = parseFilename(cfg.prefix, file);
+      const parsed = parseFilename(cfg.prefix, file, cfg.formats);
       if (parsed) claim(parsed, resolve(packDir, file), d.name);
     }
   }
@@ -205,7 +207,7 @@ function assertNoCollision(name, a, b, dir) {
 export function listTemplates(kind, { dir = DEFAULT_TEMPLATES_DIR, format = 'html' } = {}) {
   const cfg = KINDS[kind];
   if (!cfg) throw new Error(`Unknown template kind: ${kind}`);
-  assertFormat(format);
+  assertFormat(format, kind);
   return [...discover(kind, { dir, format }).values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -241,7 +243,7 @@ export function resolveTemplate(kind, name, opts = {}) {
     profilePath = DEFAULT_PROFILE_PATH,
     fallback = false,
   } = opts;
-  assertFormat(format);
+  assertFormat(format, kind);
 
   const explicit = Boolean(name && String(name).trim());
   let chosen = kebab(explicit ? name : loadProfileDefault(kind, { profilePath }) || 'standard');
@@ -263,7 +265,7 @@ export function resolveTemplate(kind, name, opts = {}) {
     throw new Error(`Template not found for kind=${kind} name=${chosen} (${fileFor(chosen)})`);
   }
   const path = entry.path;
-  if (format === 'html') {
+  if (format === 'html' || (kind === 'cover' && format === 'md')) {
     const v = validateTemplate(path, kind);
     if (!v.ok) {
       // Name the file that is actually short, not the flat filename it would
@@ -299,7 +301,7 @@ if (isMain) {
       const name = positionals[0];
       process.stdout.write(resolveTemplate(kind, name, { format, fallback: Boolean(flags.fallback) }) + '\n');
     } else {
-      process.stderr.write('Usage: node cv-templates.mjs <list|resolve> <cv|cover> [name] [--format=html|tex] [--fallback]\n');
+      process.stderr.write('Usage: node cv-templates.mjs <list|resolve> <cv|cover> [name] [--format=html|md|tex] [--fallback]\n');
       process.exit(2);
     }
   } catch (err) {
