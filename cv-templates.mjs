@@ -19,8 +19,11 @@ export const KINDS = {
   cv: {
     prefix: 'cv-template',
     profileKey: ['cv', 'template'],
-    formats: ['html', 'tex'],
+    formats: ['html', 'md', 'tex'],
     required: ['NAME', 'EXPERIENCE', 'EDUCATION'],
+    requiredByFormat: {
+      md: ['NAME', 'CONTACT_LINE', 'SUMMARY_TEXT', 'EDUCATION', 'EXPERIENCE', 'PROJECTS', 'CERTIFICATIONS', 'SKILLS'],
+    },
   },
   cover: {
     prefix: 'cover-letter-template',
@@ -211,11 +214,16 @@ export function listTemplates(kind, { dir = DEFAULT_TEMPLATES_DIR, format = 'htm
   return [...discover(kind, { dir, format }).values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function validateTemplate(path, kind) {
+export function validateTemplate(path, kind, format) {
   const cfg = KINDS[kind];
   if (!cfg) throw new Error(`Unknown template kind: ${kind}`);
   const text = readFileSync(path, 'utf-8');
-  const missing = cfg.required.filter((ph) => !text.includes(`{{${ph}}}`));
+  const detectedFormat = format || path.match(/\.([a-z0-9]+)$/i)?.[1];
+  if (kind === 'cv' && detectedFormat === 'md' && text.includes('# [FULL NAME]') && text.includes('## Experience')) {
+    return { ok: true, missing: [], reference: true };
+  }
+  const required = cfg.requiredByFormat?.[detectedFormat] || cfg.required;
+  const missing = required.filter((ph) => !text.includes(`{{${ph}}}`));
   return { ok: missing.length === 0, missing };
 }
 
@@ -265,8 +273,8 @@ export function resolveTemplate(kind, name, opts = {}) {
     throw new Error(`Template not found for kind=${kind} name=${chosen} (${fileFor(chosen)})`);
   }
   const path = entry.path;
-  if (format === 'html' || (kind === 'cover' && format === 'md')) {
-    const v = validateTemplate(path, kind);
+  if (format === 'html' || format === 'md') {
+    const v = validateTemplate(path, kind, format);
     if (!v.ok) {
       // Name the file that is actually short, not the flat filename it would
       // have had. For a pack these differ, and the flat name points at nothing.

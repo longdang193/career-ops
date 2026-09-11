@@ -33,11 +33,14 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
+import { assertArtifactDraft } from './lib/artifact-draft.mjs';
+import { renderTemplate } from './lib/template-render.mjs';
+import { resolveTemplate } from './cv-templates.mjs';
+import { assertFacts } from './verify-cv-facts.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.html');
-const PLACEHOLDER_RE = /\{\{[A-Z_]+\}\}/g;
 const CONTACT_ROW_RE = /<div class="contact-row">[\s\S]*?<\/div>/;
 
 const PAGE_WIDTHS = { letter: '8.5in', a4: '210mm' };
@@ -669,21 +672,85 @@ function renderHtml(template, payload, templatePath) {
   // The contact row and photo carry conditional markup (dropped separators /
   // no <img>), so they are rebuilt as whole blocks before placeholder fill.
   let html = template.replace(CONTACT_ROW_RE, () => buildContactRow(candidate));
-  html = html.replace(/\{\{PHOTO\}\}/g, () => buildPhoto(candidate, candidate.name));
+  const photo = buildPhoto(candidate, candidate.name);
 
   // Drop the optional sections (projects, education) that have no entries, so
   // an absent one leaves no bare header behind. See cv-sections-core.mjs.
   html = stripEmptySections(html, payload, 'html');
 
-  for (const [key, value] of Object.entries(substitutions)) {
-    html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => value);
-  }
+  const replacements = Object.fromEntries(
+    Object.entries(substitutions).map(([key, value]) => [`{{${key}}}`, value]),
+  );
+  replacements['{{PHOTO}}'] = photo;
+  return renderTemplate(html, replacements);
+}
 
-  const unresolved = html.match(PLACEHOLDER_RE);
-  if (unresolved) {
-    throw new Error(`Unresolved placeholders: ${[...new Set(unresolved)].join(', ')}`);
+function unwrapArtifactDraft(input) {
+  if (!input?.artifact_type) return { payload: input, templateName: null, renderFormat: null };
+  const draft = assertArtifactDraft(input);
+  if (draft.artifact_type !== 'cv') throw new Error(`Expected artifact_type=cv, got ${draft.artifact_type}`);
+  return {
+    payload: draft.tailored_content,
+    templateName: draft.selected_template,
+    renderFormat: draft.render_format,
+  };
+}
+
+function markdownText(value) {
+  if (value === null || value === undefined || typeof value === 'object') return '';
+  return String(value);
+}
+
+function markdownList(entries, render) {
+  return Array.isArray(entries) ? entries.map(render).filter(Boolean).join('\n') : '';
+}
+
+function replaceMarkdownSection(source, section, nextSection, body) {
+  const sectionRe = new RegExp(`(## ${section}\\s*\\r?\\n)[\\s\\S]*?(?=\\r?\\n## ${nextSection}\\s*\\r?\\n)`);
+  if (body) return source.replace(sectionRe, `$1\n${body.trim()}\n`);
+  return source.replace(sectionRe, '');
+}
+
+function renderReferenceMarkdown(template, replacements) {
+  let source = template.replace(/^# \[FULL NAME\]$/m, `# ${replacements['{{NAME}}']}`);
+  source = source.replace(/^# .*?\r?\n\r?\n[\s\S]*?(?=\r?\n## Summary)/m, (block) => {
+    const heading = block.match(/^# .*$/m)?.[0] || '#';
+    return `${heading}\n\n${replacements['{{CONTACT_LINE}}']}\n`;
+  });
+  source = replaceMarkdownSection(source, 'Summary', 'Education', replacements['{{SUMMARY_TEXT}}']);
+  source = replaceMarkdownSection(source, 'Education', 'Experience', replacements['{{EDUCATION}}']);
+  source = replaceMarkdownSection(source, 'Experience', 'Projects', replacements['{{EXPERIENCE}}']);
+  source = replaceMarkdownSection(source, 'Projects', 'Certificates', replacements['{{PROJECTS}}']);
+  source = replaceMarkdownSection(source, 'Certificates', 'Skills', replacements['{{CERTIFICATIONS}}']);
+  return source.replace(/(## Skills\s*\r?\n)[\s\S]*$/m, `$1\n${replacements['{{SKILLS}}'].trim()}\n`);
+}
+
+function renderMarkdown(template, payload) {
+  const candidate = payload.candidate || {};
+  const linkValue = (value) => typeof value === 'object' ? (value.display || value.url || '') : value;
+  const replacements = {
+    '{{NAME}}': markdownText(candidate.name),
+    '{{CONTACT_LINE}}': [candidate.location, candidate.email, candidate.phone, candidate.linkedin, candidate.github, candidate.portfolio]
+      .map(linkValue).filter(Boolean).map(markdownText).join(' | '),
+    '{{SUMMARY_TEXT}}': markdownText(payload.summary),
+    '{{EDUCATION}}': markdownList(payload.education, (entry) => `- **${markdownText(entry.title)}**${entry.org ? ` — ${markdownText(entry.org)}` : ''}${entry.year ? ` (${markdownText(entry.year)})` : ''}`),
+    '{{EXPERIENCE}}': markdownList(payload.experience, (entry) => {
+      const heading = [entry.role, entry.company].filter(Boolean).map(markdownText).join(' · ');
+      const meta = [entry.location, entry.dates || entry.period].filter(Boolean).map(markdownText).join(' · ');
+      const bullets = Array.isArray(entry.bullets) ? entry.bullets.map((bullet) => `- ${markdownText(bullet)}`).join('\n') : '';
+      return [`### ${heading}`, meta, bullets].filter(Boolean).join('\n');
+    }),
+    '{{PROJECTS}}': markdownList(payload.projects, (entry) => [`- **${markdownText(entry.name)}**`, markdownText(entry.description), Array.isArray(entry.bullets) ? entry.bullets.map((bullet) => `  - ${markdownText(bullet)}`).join('\n') : ''].filter(Boolean).join('\n')),
+    '{{CERTIFICATIONS}}': markdownList(payload.certifications, (entry) => `- **${markdownText(entry.title)}**${entry.org ? ` — ${markdownText(entry.org)}` : ''}${entry.year ? ` (${markdownText(entry.year)})` : ''}`),
+    '{{SKILLS}}': markdownList(payload.skills, (entry) => `${entry.category ? `**${markdownText(entry.category)}:** ` : ''}${Array.isArray(entry.items) ? entry.items.map(markdownText).join(', ') : markdownText(entry.items)}`),
+  };
+  if (!template.includes('{{')) return renderReferenceMarkdown(template, replacements);
+  let source = template;
+  for (const [token, value] of Object.entries(replacements)) {
+    if (value) continue;
+    source = source.replace(new RegExp(`^##[^\\r\\n]*\\r?\\n\\r?\\n?\\s*${token}\\s*\\r?\\n?`, 'm'), '');
   }
-  return html;
+  return renderTemplate(source, replacements);
 }
 
 // Payload validation lives in lib/cv-payload-schema.mjs, shared with
@@ -753,10 +820,12 @@ async function main() {
     return;
   }
 
-  const preview = args[0] === '--preview';
+  const markdownRequested = args.includes('--markdown');
+  const positionals = args.filter((arg) => arg !== '--markdown');
+  const preview = positionals[0] === '--preview';
   const [inputPath, outputPath, templateArg] = preview
-    ? [args[1], resolve(DATA_ROOT, 'output', 'cv-preview.html'), args[2]]
-    : args;
+    ? [positionals[1], resolve(DATA_ROOT, 'output', 'cv-preview.html'), positionals[2]]
+    : positionals;
   if (!inputPath || !outputPath) {
     console.error('Usage: node build-cv-html.mjs <input.json> <output.html> [template.html]');
     process.exit(1);
@@ -764,23 +833,31 @@ async function main() {
 
   const absInput = resolve(inputPath);
   const absOutput = resolve(outputPath);
-  const templatePath = templateArg ? resolve(templateArg) : TEMPLATE_PATH;
+  let templatePath = templateArg ? resolve(templateArg) : TEMPLATE_PATH;
 
   if (!existsSync(absInput)) {
     console.error(`Input file not found: ${absInput}`);
     process.exit(1);
   }
-  if (!existsSync(templatePath)) {
-    console.error(`Template not found: ${templatePath}`);
-    process.exit(1);
-  }
-
   let payload;
+  let draftInfo;
+  let markdown = markdownRequested;
   try {
     payload = JSON.parse(await readFile(absInput, 'utf-8'));
+    draftInfo = unwrapArtifactDraft(payload);
+    payload = draftInfo.payload;
+    markdown ||= draftInfo.renderFormat === 'text';
+    if (!templateArg) {
+      templatePath = resolveTemplate('cv', draftInfo.templateName, { format: markdown ? 'md' : 'html', fallback: true });
+    }
     payload.candidate = await prepareCandidatePhoto(payload.candidate);
   } catch (err) {
     console.error(`Failed to prepare CV input: ${err.message}`);
+    process.exit(1);
+  }
+
+  if (!existsSync(templatePath)) {
+    console.error(`Template not found: ${templatePath}`);
     process.exit(1);
   }
 
@@ -797,7 +874,8 @@ async function main() {
 
   let html;
   try {
-    html = renderHtml(template, payload, templatePath);
+    html = markdown ? renderMarkdown(template, payload) : renderHtml(template, payload, templatePath);
+    if (markdown) assertFacts(html, { label: 'CV Markdown' });
   } catch (err) {
     console.error(err.message);
     process.exit(1);
@@ -877,6 +955,15 @@ async function runSelfTest() {
   }
   if (/Kubernetes & Docker/.test(html)) {
     console.error('Self-test failed: found an unescaped ampersand in output');
+    process.exit(1);
+  }
+
+  const markdown = renderMarkdown(
+    '<!-- Reference-only template. -->\n\n# [FULL NAME]\n\ncontact\n\n## Summary\n\nplaceholder\n\n## Education\n\nplaceholder\n\n## Experience\n\nplaceholder\n\n## Projects\n\nplaceholder\n\n## Certificates\n\nplaceholder\n\n## Skills\n\nplaceholder\n',
+    { ...sample, summary: 'Analytics & reporting' },
+  );
+  if (!markdown.includes('Analytics & reporting') || markdown.includes('&amp;')) {
+    console.error('Self-test failed: Markdown renderer HTML-escaped plain text');
     process.exit(1);
   }
 

@@ -2,10 +2,10 @@
 /**
  * openai-tailor.mjs — OpenAI-compatible CV Tailoring for career-ops
  *
- * Tailor your CV (HTML) with ANY OpenAI-compatible chat endpoint instead of Claude.
+ * Tailor your CV content with ANY OpenAI-compatible chat endpoint instead of Claude.
  * This is the headless companion to openai-eval.mjs. It takes an evaluation report
- * and the job description, applies anti-fabrication rules, and outputs a filled
- * cv-template.html ready to be turned into a PDF.
+ * and the job description, applies anti-fabrication rules, and outputs a validated
+ * structured draft for the deterministic renderer.
  *
  * Usage:
  *   node openai-tailor.mjs --jd ./jds/my-job.txt --report reports/001-company-2026.md
@@ -21,6 +21,9 @@ import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import * as yaml from 'js-yaml';
+import { assertArtifactDraft } from './lib/artifact-draft.mjs';
+import { resolveTemplate } from './cv-templates.mjs';
+import { assertFacts } from './verify-cv-facts.mjs';
 
 try {
   const { config } = await import('dotenv');
@@ -39,7 +42,6 @@ const PATHS = {
   pdfMode:  join(ROOT, 'modes', 'pdf.md'),
   cv:       join(DATA_ROOT, 'cv.md'),
   profile:  join(DATA_ROOT, 'config', 'profile.yml'),
-  template: join(ROOT, 'templates', 'cv-template.html'),
   output:   join(DATA_ROOT, 'output'),
 };
 
@@ -54,7 +56,7 @@ if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
 ║      career-ops — OpenAI-compatible CV Tailoring (Headless)      ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-  Tailor your CV with any OpenAI-compatible API to output a filled HTML file.
+  Tailor your CV content with any OpenAI-compatible API to output a validated draft.
 
   USAGE
     node openai-tailor.mjs --jd <path> --report <path>
@@ -192,14 +194,21 @@ const writingContext = readFile(PATHS.writing, 'modes/_writing.md', false);
 const pdfModeLogic   = readFile(PATHS.pdfMode, 'modes/pdf.md', false);
 const cvContent      = readFile(PATHS.cv, 'cv.md', true);
 const profileContent = readFile(PATHS.profile, 'config/profile.yml', true);
-const templateHtml   = readFile(PATHS.template, 'templates/cv-template.html', true);
+const profile = yaml.load(profileContent) || {};
+const selectedTemplate = profile?.cv?.template || 'standard';
+const configuredFormat = profile?.cv?.output_format || 'text';
+if (!['text', 'html', 'pdf'].includes(configuredFormat)) {
+  console.error(`❌  Unsupported cv.output_format: ${configuredFormat}`);
+  process.exit(1);
+}
+resolveTemplate('cv', selectedTemplate, { format: configuredFormat === 'text' ? 'md' : 'html' });
 
 // ---------------------------------------------------------------------------
 // Build system prompt
 // ---------------------------------------------------------------------------
 const systemPrompt = `You are career-ops, an AI-powered CV tailoring engine.
 You read a candidate's base CV, profile, an evaluation report, and a Job Description.
-Your job is to apply strict anti-fabrication tailoring rules to fill in an HTML template.
+Your job is to apply strict anti-fabrication tailoring rules to return tailored CV content.
 
 ═══════════════════════════════════════════════════════
 SYSTEM CONTEXT (_shared.md)
@@ -216,12 +225,6 @@ PDF TAILORING MODE (pdf.md)
 ═══════════════════════════════════════════════════════
 ${pdfModeLogic}
 
-═══════════════════════════════════════════════════════
-HTML TEMPLATE (cv-template.html)
-═══════════════════════════════════════════════════════
-${templateHtml}
-
-═══════════════════════════════════════════════════════
 CANDIDATE BASE CV & PROFILE
 ═══════════════════════════════════════════════════════
 [cv.md]
@@ -233,12 +236,12 @@ ${profileContent}
 ═══════════════════════════════════════════════════════
 IMPORTANT OPERATING RULES FOR THIS SESSION
 ═══════════════════════════════════════════════════════
-1. NEVER invent skills, metrics, or experience the candidate does not have.
-2. Inject keywords naturally by reformulating the real experience using JD vocabulary.
+1. NEVER invent skills, metrics, experience, outcomes, or decision authority the candidate does not have.
+2. Inject keywords only by reformulating facts explicitly present in [cv.md] or [article-digest.md]. If a JD keyword cannot be mapped to source text, omit it.
 3. Apply the 6-second clarity gate: strongest matching evidence first.
-4. Replace all {{PLACEHOLDERS}} in the HTML Template exactly as instructed.
-5. Your final output MUST be the complete, raw, tailored HTML document.
-6. Do NOT include markdown formatting like \`\`\`html or conversational filler. Output the raw HTML starting with <!DOCTYPE html> and ending with </html>.`;
+4. Return one JSON object containing only tailored CV content fields: candidate, summary, competencies, experience, projects, education, certifications, awards, interests, skills.
+5. Do NOT return HTML, CSS, Markdown fences, layout, style, template, or page-break fields.
+6. Return JSON only, with no conversational filler.`;
 
 // ---------------------------------------------------------------------------
 // Prompt caching (#1709, closing the gap in #2432) — same shape as
@@ -259,6 +262,27 @@ export function buildSystemMessage(prompt, host) {
   };
 }
 
+export function parseProviderContent(raw, { template, renderFormat, jobContext }) {
+  const text = String(raw || '').trim();
+  if (!text || /^```/.test(text) || /```$/.test(text)) {
+    throw new Error('Provider response must be unfenced JSON content only');
+  }
+  let tailoredContent;
+  try {
+    tailoredContent = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Provider response is not valid JSON: ${err.message}`);
+  }
+  return assertArtifactDraft({
+    artifact_type: 'cv',
+    target_job_context: jobContext,
+    candidate_facts: { sources: ['cv.md', 'config/profile.yml'] },
+    tailored_content: tailoredContent,
+    selected_template: template,
+    render_format: renderFormat,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Call the OpenAI-compatible endpoint
 // ---------------------------------------------------------------------------
@@ -274,7 +298,7 @@ console.log(`🤖  Calling ${modelName} via ${endpointHost}... this may take a m
 const headers = { 'Content-Type': 'application/json' };
 if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-let tailoredHtml;
+let artifactDraft;
 try {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -283,7 +307,7 @@ try {
       model:    modelName,
       messages: [
         buildSystemMessage(systemPrompt, endpointHost),
-        { role: 'user',   content: `EVALUATION REPORT:\n\n${reportText}\n\nJOB DESCRIPTION:\n\n${jdText}\n\nNow, generate and output the fully filled HTML CV matching the rules above. Output ONLY raw HTML.` },
+        { role: 'user',   content: `EVALUATION REPORT:\n\n${reportText}\n\nJOB DESCRIPTION:\n\n${jdText}\n\nNow, return ONLY the tailored CV content object as JSON.` },
       ],
       stream:      false,
       temperature: 0.2,
@@ -299,21 +323,34 @@ try {
   }
 
   const data = await res.json();
-  tailoredHtml = data.choices?.[0]?.message?.content?.trim();
-  if (!tailoredHtml) {
+  const providerContent = data.choices?.[0]?.message?.content?.trim();
+  if (!providerContent) {
     console.error('❌  The endpoint returned an empty response.');
     process.exit(1);
   }
+  artifactDraft = parseProviderContent(providerContent, {
+    template: selectedTemplate,
+    renderFormat: configuredFormat,
+    jobContext: { company: companySlug, role_title: roleSlug },
+  });
 } catch (err) {
   console.error(`❌  API call failed: ${err.message}`);
   process.exit(1);
 }
 
-// Clean up markdown block wrapping if the LLM adds it despite instructions
-tailoredHtml = tailoredHtml.replace(/^\s*```(html)?\s*/i, '').replace(/\s*```\s*$/, '');
+try {
+  assertFacts(JSON.stringify(artifactDraft.tailored_content), {
+    label: 'provider CV draft',
+    sourcePaths: [PATHS.cv, join(DATA_ROOT, 'article-digest.md')],
+    configPath: join(DATA_ROOT, 'config', 'cv-facts.json'),
+  });
+} catch (err) {
+  console.error(`❌  ${err.message}`);
+  process.exit(1);
+}
 
 // ---------------------------------------------------------------------------
-// Save tailored HTML
+// Save validated structured draft
 // ---------------------------------------------------------------------------
 try {
   if (!existsSync(PATHS.output)) {
@@ -332,18 +369,15 @@ try {
   candidateName = candidateName
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-  const filename = `cv-${candidateName}-${companySlug}.html`;
-  const htmlPath = join(PATHS.output, filename);
+  const filename = `cv-${candidateName}-${companySlug}.draft.json`;
+  const draftPath = join(PATHS.output, filename);
 
-  writeFileSync(htmlPath, tailoredHtml, 'utf-8');
-  console.log(`\n✅  Tailored HTML saved: ${htmlPath}`);
+  writeFileSync(draftPath, JSON.stringify(artifactDraft, null, 2) + '\n', 'utf-8');
+  console.log(`\n✅  Structured CV draft saved: ${draftPath}`);
 
-  // Print next steps
-  const pdfFilename = `cv-${candidateName}-${companySlug}-${roleSlug}-${new Date().toISOString().split('T')[0]}.pdf`;
-  const reportNumMatch = reportFilename.match(/^(\d+)-/);
-  const reportNum = reportNumMatch ? reportNumMatch[1] : '001';
-
-  console.log(`\n📄  Next step (generate PDF):\n    node generate-pdf.mjs output/${filename} output/${pdfFilename} --format=letter --report=${reportNum}\n`);
+  const format = configuredFormat === 'text' ? ' --markdown' : '';
+  const extension = configuredFormat === 'text' ? 'md' : 'html';
+  console.log(`\n📄  Next step (render selected template):\n    node build-cv-html.mjs ${draftPath} ${join(PATHS.output, `cv-${candidateName}-${companySlug}.${extension}`)}${format}\n`);
 
 } catch (err) {
   console.warn(`⚠️   Could not save HTML: ${err.message}`);

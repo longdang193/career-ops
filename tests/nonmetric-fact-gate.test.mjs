@@ -172,6 +172,7 @@ try {
     ['bare abstract noun', 'Built this using efficiency.'],
     ['stoplisted noun + abstract-noun-suffix phrase', 'Built this using feedback and improve delivery.'],
     ['three-word gerund-led phrase', 'Built this using improving on-time submission.'],
+    ['decision prose after source-backed tools', 'Built this using sales data to identify opportunities and prioritize product decisions.'],
   ];
   for (const [label, text] of falsePositiveCases) {
     const found = factClaims(text).filter(claim => claim.kind === 'tool');

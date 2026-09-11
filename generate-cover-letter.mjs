@@ -18,12 +18,28 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname, resolve, join, relative, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
+import * as yaml from "js-yaml";
 import { assertFacts } from "./verify-cv-facts.mjs";
 import { resolveTemplate } from "./cv-templates.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { assertArtifactDraft } from "./lib/artifact-draft.mjs";
+import { renderTemplate } from "./lib/template-render.mjs";
+import { getCareerOpsRoot } from "./path-resolver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_ROOT = resolve(__dirname, "output");
+const DATA_ROOT = getCareerOpsRoot();
+
+function profileCoverOutputFormat() {
+  const profilePath = resolve(DATA_ROOT, "config", "profile.yml");
+  if (!existsSync(profilePath)) return "text";
+  try {
+    const profile = yaml.load(readFileSync(profilePath, "utf-8")) || {};
+    return profile?.cover_letter?.output_format || profile?.cv?.output_format || "text";
+  } catch {
+    return "text";
+  }
+}
 
 /**
  * Resolve a requested cover-letter output path.
@@ -265,43 +281,26 @@ function buildReplacements(payload) {
   return replacements;
 }
 
-function renderTemplate(source, replacements) {
-
-  // Single-pass substitution: each {{TOKEN}} is replaced exactly once against
-  // the original template. A single regex pass (rather than iterative
-  // split/join) ensures a substituted value that itself contains a {{TOKEN}}
-  // sequence is left literal instead of being re-interpreted as a placeholder.
-  //
-  // A token with no entry in the map is a template the renderer cannot fill —
-  // a custom cover-letter template (KINDS.cover in cv-templates.mjs) carrying a
-  // typo'd or unsupported token. Collect those DURING the pass rather than
-  // scanning the result: a scan of the output cannot tell a template token from
-  // the same sequence appearing inside a substituted value, which is exactly
-  // what the single pass above is careful to leave literal.
-  const unresolved = new Set();
-  const rendered = source.replace(/\{\{[A-Z_]+\}\}/g, (token) => {
-    const value = replacements[token];
-    if (value == null) {
-      unresolved.add(token);
-      return token;
-    }
-    return value;
-  });
-
-  // Fail loudly, matching build-cv-html.mjs and build-cv-latex.mjs. Shipping a
-  // letter with a literal {{TOKEN}} in it is worse than not producing one.
-  if (unresolved.size) {
-    throw new Error(`Unresolved placeholders: ${[...unresolved].join(', ')}`);
+function unwrapArtifactDraft(input) {
+  if (!input?.artifact_type) return { payload: input, renderFormat: null };
+  const draft = assertArtifactDraft(input);
+  if (draft.artifact_type !== 'cover_letter') {
+    throw new Error(`Expected artifact_type=cover_letter, got ${draft.artifact_type}`);
   }
-  return rendered;
+  return {
+    payload: { ...draft.tailored_content, template: draft.selected_template },
+    renderFormat: draft.render_format,
+  };
 }
 
 export function buildHtml(payload, templatePath) {
+  payload = unwrapArtifactDraft(payload).payload;
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
   return renderTemplate(readFileSync(resolvedPath, "utf-8"), buildReplacements(payload));
 }
 
 export function buildMarkdown(payload, templatePath) {
+  payload = unwrapArtifactDraft(payload).payload;
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
   const replacements = buildReplacements(payload);
   replacements["{{GREETING_BLOCK}}"] = escapeHtml(payload.letter.greeting || "");
@@ -348,8 +347,18 @@ Usage:
     process.exit(1);
   }
 
-  const payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
-  const markdown = Boolean(args.markdown);
+  let payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
+  let draftInfo;
+  try {
+    draftInfo = unwrapArtifactDraft(payload);
+    payload = draftInfo.payload;
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  const markdown = Boolean(args.markdown)
+    || draftInfo.renderFormat === 'text'
+    || (!draftInfo.renderFormat && profileCoverOutputFormat() === 'text');
 
   if (args.out) {
     payload.output_path = args.out;
@@ -367,8 +376,6 @@ Usage:
       process.exit(1);
     }
   }
-
-  if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
 
   try {
     const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
@@ -388,12 +395,14 @@ Usage:
       }
     }
     if (markdown) {
+      if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
       writeFileSync(payload.output_path, artifact, "utf-8");
       console.log(`\\nCover letter Markdown: ${payload.output_path}`);
       return;
     }
     // Imported only after fact validation so a failed gate does not load
     // Playwright or create a PDF artifact.
+    if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
     const { renderHtmlToPdf } = await import("./generate-pdf.mjs");
     const outputPath = resolve(payload.output_path);
     await renderHtmlToPdf(artifact, outputPath, {
