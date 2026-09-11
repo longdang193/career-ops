@@ -18,28 +18,12 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import { dirname, resolve, join, relative, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
-import * as yaml from "js-yaml";
 import { assertFacts } from "./verify-cv-facts.mjs";
-import { resolveTemplate } from "./cv-templates.mjs";
+import { getTemplateContract, loadProfileConfig, resolveTemplate } from "./cv-templates.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { assertArtifactDraft } from "./lib/artifact-draft.mjs";
-import { renderTemplate } from "./lib/template-render.mjs";
-import { getCareerOpsRoot } from "./path-resolver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_ROOT = resolve(__dirname, "output");
-const DATA_ROOT = getCareerOpsRoot();
-
-function profileCoverOutputFormat() {
-  const profilePath = resolve(DATA_ROOT, "config", "profile.yml");
-  if (!existsSync(profilePath)) return "text";
-  try {
-    const profile = yaml.load(readFileSync(profilePath, "utf-8")) || {};
-    return profile?.cover_letter?.output_format || profile?.cv?.output_format || "text";
-  } catch {
-    return "text";
-  }
-}
 
 /**
  * Resolve a requested cover-letter output path.
@@ -206,6 +190,90 @@ function buildSignatureBlock(signature, candidateName) {
   return `<p class="signature">${lines.join("<br>")}</p>`;
 }
 
+function buildLongDangMarkdownContactLine(candidate) {
+  const links = [];
+  if (candidate.email) {
+    const email = escapeHtml(candidate.email);
+    links.push({ icon: 'tabler:mail', href: `mailto:${email}`, label: email });
+  }
+  if (candidate.phone) {
+    const phone = escapeHtml(candidate.phone);
+    links.push({ icon: 'tabler:phone', href: `tel:${phone.replace(/[^\d+]/g, '')}`, label: phone });
+  }
+  for (const [field, icon] of [['linkedin', 'tabler:brand-linkedin'], ['github', 'tabler:brand-github']]) {
+    const value = candidate[field];
+    if (!value) continue;
+    const url = typeof value === 'object' ? value.url || '' : value;
+    const display = typeof value === 'object' ? value.display || url : value;
+    if (!url || !display) continue;
+    links.push({ icon, href: asUrl(url), label: display.replace(/^https?:\/\//i, '').replace(/\/+$/, '') });
+  }
+  return links.map((link, index) => {
+    const separator = index === links.length - 1 ? ' no-separator' : '';
+    return `<span class="resume-header-item${separator}"><span class="iconify" data-icon="${escapeHtml(link.icon)}"></span> <a href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a></span>`;
+  }).join('\n');
+}
+
+function buildMarkdownAchievementsProseBlock(achievements) {
+  if (!achievements || !achievements.length) return '';
+  return achievements.map((achievement) => {
+    const lead = escapeHtml((achievement.lead || '').replace(/,\s*$/, ''));
+    const impact = escapeHtml(achievement.impact || '');
+    return [lead && `${lead},`, impact].filter(Boolean).join(' ');
+  }).filter(Boolean).join('\n\n');
+}
+
+function validateEvidenceCount(achievements, contract, hasEvidenceSlot = true) {
+  if (!hasEvidenceSlot) return;
+  const count = achievements?.length || 0;
+  if (count < contract.evidenceMin || count > contract.evidenceMax) {
+    throw new Error(`Cover template requires ${contract.evidenceMin}-${contract.evidenceMax} evidence blocks; received ${count}`);
+  }
+}
+
+function coverLetterConstraints() {
+  const constraints = loadProfileConfig().cover_letter?.constraints || {};
+  return {
+    minWords: Number.isInteger(constraints.min_words) ? constraints.min_words : 0,
+    targetWords: Number.isInteger(constraints.target_words) ? constraints.target_words : 0,
+    maxWords: Number.isInteger(constraints.max_words) ? constraints.max_words : 0,
+    maxEvidenceClaims: Number.isInteger(constraints.max_evidence_claims) ? constraints.max_evidence_claims : 0,
+  };
+}
+
+function visibleWordCount(text) {
+  return String(text)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+}
+
+function buildCoverBodyText(letter = {}) {
+  return [
+    letter.opening,
+    letter.profile_intro,
+    letter.problems_section,
+    ...(letter.achievements || []).flatMap(({ lead, impact }) => [lead, impact]),
+    letter.closing,
+    letter.language_closing,
+  ].filter(Boolean).join('\n');
+}
+
+export function validateCoverConstraints(bodyText, achievements = [], configured = coverLetterConstraints()) {
+  const words = visibleWordCount(bodyText);
+  if (configured.minWords && words < configured.minWords) {
+    throw new Error(`Cover letter has ${words} body words; minimum is ${configured.minWords}`);
+  }
+  if (configured.maxWords && words > configured.maxWords) {
+    throw new Error(`Cover letter has ${words} body words; maximum is ${configured.maxWords}`);
+  }
+  if (configured.maxEvidenceClaims && achievements.length > configured.maxEvidenceClaims) {
+    throw new Error(`Cover letter has ${achievements.length} evidence claims; maximum is ${configured.maxEvidenceClaims}`);
+  }
+  return { words, targetWords: configured.targetWords };
+}
+
 /** Build the Markdown sign-off used by Markdown-first templates. */
 function buildMarkdownSignatureBlock(signature, candidateName) {
   if (!signature) return "";
@@ -261,6 +329,7 @@ function buildReplacements(payload) {
     "{{SUBTITLE}}": escapeHtml(candidate.subtitle || ""),
     "{{QUOTE}}": escapeHtml(candidate.quote || ""),
     "{{CONTACT_LINE}}": buildContactLine(candidate),
+    "{{CONTACT_LINE_ICON}}": buildLongDangMarkdownContactLine(candidate),
     "{{CREDENTIALS_BLOCK}}": buildCredentialsBlock(candidate),
     "{{RECIPIENT_TEAM}}": escapeHtml(letter.recipient_team || "Recruitment Team"),
     "{{COMPANY}}": escapeHtml(letter.company || ""),
@@ -271,6 +340,7 @@ function buildReplacements(payload) {
     "{{OPENING}}": escapeHtml(letter.opening),
     "{{PROFILE_INTRO}}": escapeHtml(letter.profile_intro),
     "{{ACHIEVEMENTS_BLOCK}}": buildAchievementsBlock(letter.achievements),
+    "{{ACHIEVEMENTS_PROSE_BLOCK}}": buildMarkdownAchievementsProseBlock(letter.achievements),
     "{{PROBLEMS_BLOCK}}": problemsBlock,
     "{{CLOSING_BLOCK}}": closingBlock,
     "{{LANGUAGE_CLOSING_BLOCK}}": languageClosingBlock,
@@ -281,27 +351,58 @@ function buildReplacements(payload) {
   return replacements;
 }
 
-function unwrapArtifactDraft(input) {
-  if (!input?.artifact_type) return { payload: input, renderFormat: null };
-  const draft = assertArtifactDraft(input);
-  if (draft.artifact_type !== 'cover_letter') {
-    throw new Error(`Expected artifact_type=cover_letter, got ${draft.artifact_type}`);
+function renderTemplate(source, replacements) {
+
+  // Single-pass substitution: each {{TOKEN}} is replaced exactly once against
+  // the original template. A single regex pass (rather than iterative
+  // split/join) ensures a substituted value that itself contains a {{TOKEN}}
+  // sequence is left literal instead of being re-interpreted as a placeholder.
+  //
+  // A token with no entry in the map is a template the renderer cannot fill —
+  // a custom cover-letter template (KINDS.cover in cv-templates.mjs) carrying a
+  // typo'd or unsupported token. Collect those DURING the pass rather than
+  // scanning the result: a scan of the output cannot tell a template token from
+  // the same sequence appearing inside a substituted value, which is exactly
+  // what the single pass above is careful to leave literal.
+  const unresolved = new Set();
+  const rendered = source.replace(/\{\{[A-Z_]+\}\}/g, (token) => {
+    const value = replacements[token];
+    if (value == null) {
+      unresolved.add(token);
+      return token;
+    }
+    return value;
+  });
+
+  // Fail loudly, matching build-cv-html.mjs and build-cv-latex.mjs. Shipping a
+  // letter with a literal {{TOKEN}} in it is worse than not producing one.
+  if (unresolved.size) {
+    throw new Error(`Unresolved placeholders: ${[...unresolved].join(', ')}`);
   }
-  return {
-    payload: { ...draft.tailored_content, template: draft.selected_template },
-    renderFormat: draft.render_format,
-  };
+  return rendered;
 }
 
 export function buildHtml(payload, templatePath) {
-  payload = unwrapArtifactDraft(payload).payload;
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
-  return renderTemplate(readFileSync(resolvedPath, "utf-8"), buildReplacements(payload));
+  const contract = getTemplateContract(resolvedPath);
+  const source = readFileSync(resolvedPath, "utf-8");
+  const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
+  validateEvidenceCount(payload.letter.achievements, contract, hasEvidenceSlot);
+  return renderTemplate(source, buildReplacements(payload));
 }
 
 export function buildMarkdown(payload, templatePath) {
-  payload = unwrapArtifactDraft(payload).payload;
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
+  const source = readFileSync(resolvedPath, "utf-8");
+  const contract = getTemplateContract(resolvedPath);
+  const evidenceToken = contract.evidenceStyle === 'prose'
+    ? '{{ACHIEVEMENTS_PROSE_BLOCK}}'
+    : '{{ACHIEVEMENTS_BLOCK}}';
+  const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
+  if (hasEvidenceSlot && !source.includes(evidenceToken)) {
+    throw new Error(`Cover template evidence_style=${contract.evidenceStyle} requires ${evidenceToken}`);
+  }
+  validateEvidenceCount(payload.letter.achievements, contract, hasEvidenceSlot);
   const replacements = buildReplacements(payload);
   replacements["{{GREETING_BLOCK}}"] = escapeHtml(payload.letter.greeting || "");
   replacements["{{ACHIEVEMENTS_BLOCK}}"] = buildMarkdownAchievementsBlock(payload.letter.achievements);
@@ -347,18 +448,8 @@ Usage:
     process.exit(1);
   }
 
-  let payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
-  let draftInfo;
-  try {
-    draftInfo = unwrapArtifactDraft(payload);
-    payload = draftInfo.payload;
-  } catch (err) {
-    console.error(err.message);
-    process.exit(1);
-  }
-  const markdown = Boolean(args.markdown)
-    || draftInfo.renderFormat === 'text'
-    || (!draftInfo.renderFormat && profileCoverOutputFormat() === 'text');
+  const payload = JSON.parse(readFileSync(payloadPath, "utf-8"));
+  const markdown = Boolean(args.markdown);
 
   if (args.out) {
     payload.output_path = args.out;
@@ -377,8 +468,11 @@ Usage:
     }
   }
 
+  if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
+
   try {
     const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
+    if (markdown) validateCoverConstraints(buildCoverBodyText(payload.letter), payload.letter?.achievements || []);
     // Cover letters are candidate-facing documents too. Reuse the CV fact
     // validator before importing Playwright or writing a PDF so a failed gate
     // cannot leave behind a misleading artifact.
@@ -395,14 +489,12 @@ Usage:
       }
     }
     if (markdown) {
-      if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
       writeFileSync(payload.output_path, artifact, "utf-8");
       console.log(`\\nCover letter Markdown: ${payload.output_path}`);
       return;
     }
     // Imported only after fact validation so a failed gate does not load
     // Playwright or create a PDF artifact.
-    if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
     const { renderHtmlToPdf } = await import("./generate-pdf.mjs");
     const outputPath = resolve(payload.output_path);
     await renderHtmlToPdf(artifact, outputPath, {

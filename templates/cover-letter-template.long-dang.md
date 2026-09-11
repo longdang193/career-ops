@@ -1,6 +1,9 @@
 <!-- career-ops-template
-name: Long Dang Markdown Cover Letter
+name: Markdown Prose Cover Letter
 version: 1.0.0
+evidence_min: 2
+evidence_max: 3
+evidence_style: prose
 -->
 
 <header class="resume-header cover-header">
@@ -8,11 +11,11 @@ version: 1.0.0
 # {{NAME}}
 
 <div class="cover-subtitle">
-{{SUBTITLE}}
+<a href="#">{{SUBTITLE}}</a>
 </div>
 
 <div class="cover-contact">
-{{CONTACT_LINE}}
+{{CONTACT_LINE_ICON}}
 </div>
 
 <div class="cover-quote">
@@ -46,7 +49,7 @@ version: 1.0.0
 
 ## WHY Me?
 
-{{ACHIEVEMENTS_BLOCK}}
+{{ACHIEVEMENTS_PROSE_BLOCK}}
 
 {{CLOSING_BLOCK}}
 

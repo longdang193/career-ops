@@ -19,11 +19,8 @@ export const KINDS = {
   cv: {
     prefix: 'cv-template',
     profileKey: ['cv', 'template'],
-    formats: ['html', 'md', 'tex'],
+    formats: ['html', 'tex'],
     required: ['NAME', 'EXPERIENCE', 'EDUCATION'],
-    requiredByFormat: {
-      md: ['NAME', 'CONTACT_LINE', 'SUMMARY_TEXT', 'EDUCATION', 'EXPERIENCE', 'PROJECTS', 'CERTIFICATIONS', 'SKILLS'],
-    },
   },
   cover: {
     prefix: 'cover-letter-template',
@@ -82,6 +79,30 @@ export function parseMeta(path) {
     if (kv) meta[kv[1].toLowerCase()] = kv[2];
   }
   return meta;
+}
+
+const DEFAULT_COVER_CONTRACT = Object.freeze({
+  evidenceMin: 0,
+  evidenceMax: 4,
+  evidenceStyle: 'bullets',
+});
+
+export function getTemplateContract(path, kind = 'cover') {
+  if (kind !== 'cover') return {};
+  const meta = parseMeta(path);
+  const evidenceMin = meta.evidence_min == null ? DEFAULT_COVER_CONTRACT.evidenceMin : Number(meta.evidence_min);
+  const evidenceMax = meta.evidence_max == null ? DEFAULT_COVER_CONTRACT.evidenceMax : Number(meta.evidence_max);
+  const evidenceStyle = meta.evidence_style || DEFAULT_COVER_CONTRACT.evidenceStyle;
+  if (!Number.isInteger(evidenceMin) || evidenceMin < 0) {
+    throw new Error(`Invalid cover template evidence_min: ${meta.evidence_min}`);
+  }
+  if (!Number.isInteger(evidenceMax) || evidenceMax < evidenceMin) {
+    throw new Error(`Invalid cover template evidence_max: ${meta.evidence_max}`);
+  }
+  if (!['bullets', 'prose'].includes(evidenceStyle)) {
+    throw new Error(`Invalid cover template evidence_style: ${evidenceStyle}`);
+  }
+  return { evidenceMin, evidenceMax, evidenceStyle };
 }
 
 // Build the entry a discovered template file contributes.
@@ -214,29 +235,27 @@ export function listTemplates(kind, { dir = DEFAULT_TEMPLATES_DIR, format = 'htm
   return [...discover(kind, { dir, format }).values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function validateTemplate(path, kind, format) {
+export function validateTemplate(path, kind) {
   const cfg = KINDS[kind];
   if (!cfg) throw new Error(`Unknown template kind: ${kind}`);
   const text = readFileSync(path, 'utf-8');
-  const detectedFormat = format || path.match(/\.([a-z0-9]+)$/i)?.[1];
-  if (kind === 'cv' && detectedFormat === 'md' && text.includes('# [FULL NAME]') && text.includes('## Experience')) {
-    return { ok: true, missing: [], reference: true };
-  }
-  const required = cfg.requiredByFormat?.[detectedFormat] || cfg.required;
-  const missing = required.filter((ph) => !text.includes(`{{${ph}}}`));
+  const missing = cfg.required.filter((ph) => !text.includes(`{{${ph}}}`));
   return { ok: missing.length === 0, missing };
+}
+
+export function loadProfileConfig({ profilePath = DEFAULT_PROFILE_PATH } = {}) {
+  if (!existsSync(profilePath)) return {};
+  try {
+    return yaml.load(readFileSync(profilePath, 'utf-8')) || {};
+  } catch {
+    return {};
+  }
 }
 
 export function loadProfileDefault(kind, { profilePath = DEFAULT_PROFILE_PATH } = {}) {
   const cfg = KINDS[kind];
   if (!cfg) throw new Error(`Unknown template kind: ${kind}`);
-  if (!existsSync(profilePath)) return null;
-  let doc;
-  try {
-    doc = yaml.load(readFileSync(profilePath, 'utf-8')) || {};
-  } catch {
-    return null;
-  }
+  const doc = loadProfileConfig({ profilePath });
   let node = doc;
   for (const key of cfg.profileKey) node = node?.[key];
   return typeof node === 'string' && node.trim() ? node.trim() : null;
@@ -273,8 +292,8 @@ export function resolveTemplate(kind, name, opts = {}) {
     throw new Error(`Template not found for kind=${kind} name=${chosen} (${fileFor(chosen)})`);
   }
   const path = entry.path;
-  if (format === 'html' || format === 'md') {
-    const v = validateTemplate(path, kind, format);
+  if (format === 'html' || (kind === 'cover' && format === 'md')) {
+    const v = validateTemplate(path, kind);
     if (!v.ok) {
       // Name the file that is actually short, not the flat filename it would
       // have had. For a pack these differ, and the flat name points at nothing.

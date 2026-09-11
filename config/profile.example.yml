@@ -128,12 +128,11 @@ spend_tier: standard
 #   margin:          "0.5in"             # page margin (@page)
 
 cv:
-  template: long-dang
-  output_format: "text" # "html", "latex", or "text" (tailored markdown, no PDF)
+  output_format: "html" # "html" (default), "latex", or "text" (tailored markdown, no PDF)
   # Shared optional LLM audit for tailored CVs and cover letters.
-  llm_audit:
-    enabled: false
-    max_cycles: 2
+  # llm_audit:
+  #   enabled: false
+  #   max_cycles: 2
   # (Optional) Canva resume design ID for visual CV generation via /career-ops pdf.
   # Find it in your Canva design URL: https://www.canva.com/design/DAxxxxxxx/...
   # The ID starts with "D" and is 11 characters long.
@@ -196,8 +195,6 @@ cv:
 # All fields are optional — omit any you don't need.
 
 cover_letter:
-  # Markdown is canonical; PDF is an optional derived artifact.
-  output_format: "text"
   # Your notice period in calendar days. Surfaced as a prompt default when the
   # JD requests an immediate start. The user confirms the actual value before it
   # appears in the letter.
@@ -206,6 +203,14 @@ cover_letter:
   # templates/ named cover-letter-template.<name>.html or
   # cover-letter-template.<name>.md. Unset -> built-in HTML template.
   # template: modern
+
+  # Global content limits shared by all cover-letter templates. Template-local
+  # evidence_min/evidence_max metadata controls presentation-specific block counts.
+  constraints:
+    min_words: 320
+    target_words: 370
+    max_words: 420
+    max_evidence_claims: 4
 
   # Your current professional domain (used to detect domain gaps vs the JD).
   # Plain English, e.g. "digital media", "fintech", "healthcare IT".

@@ -9,6 +9,7 @@ import {
   KINDS,
   listTemplates,
   parseMeta,
+  getTemplateContract,
   validateTemplate,
   resolveTemplate,
   loadProfileDefault,
@@ -38,12 +39,7 @@ function fixtureDir() {
     '<!-- career-ops-template\nname: Executive Authority\nversion: 1.0.0\n-->\n{{NAME}}{{EXPERIENCE}}{{EDUCATION}}'
   );
   writeFileSync(join(dir, 'cv-template.tex'), '{{NAME}}');
-  writeFileSync(
-    join(dir, 'cv-template.long-dang.md'),
-    '{{NAME}}{{CONTACT_LINE}}{{SUMMARY_TEXT}}{{EDUCATION}}{{EXPERIENCE}}{{PROJECTS}}{{CERTIFICATIONS}}{{SKILLS}}'
-  );
   writeFileSync(join(dir, 'cover-letter-template.html'), '{{NAME}}{{ROLE_TITLE}}{{OPENING}}');
-  writeFileSync(join(dir, 'cover-letter-template.md'), '{{NAME}}{{ROLE_TITLE}}{{OPENING}}');
   writeFileSync(
     join(dir, 'cover-letter-template.formal.html'),
     '<!-- career-ops-template\nname: Formal\nversion: 1.0.0\n-->\n{{NAME}}{{ROLE_TITLE}}{{OPENING}}'
@@ -72,11 +68,6 @@ test('listTemplates: format filter (tex) is separate from html', () => {
   assert.deepEqual(tex.map((t) => t.name), ['standard']);
 });
 
-test('listTemplates: CV Markdown is a first-class format', () => {
-  const dir = fixtureDir();
-  assert.deepEqual(listTemplates('cv', { dir, format: 'md' }).map((t) => t.name), ['long-dang']);
-});
-
 test('listTemplates: returns [] when the templates dir is absent', () => {
   const dir = join(tmpdir(), 'cvt-does-not-exist-38f2a1');
   assert.deepEqual(listTemplates('cv', { dir }), []);
@@ -93,6 +84,44 @@ test('parseMeta: reads header key/value, empty when absent', () => {
   const dir = fixtureDir();
   assert.equal(parseMeta(join(dir, 'cv-template.executive-authority.html')).name, 'Executive Authority');
   assert.deepEqual(parseMeta(join(dir, 'cv-template.html')), {});
+});
+
+test('getTemplateContract: reads typed cover evidence metadata and defaults', () => {
+  const dir = fixtureDir();
+  const custom = join(dir, 'cover-letter-template.custom.md');
+  writeFileSync(custom, `<!-- career-ops-template
+name: Custom
+evidence_min: 2
+evidence_max: 3
+evidence_style: prose
+-->`);
+  assert.deepEqual(getTemplateContract(custom), {
+    evidenceMin: 2,
+    evidenceMax: 3,
+    evidenceStyle: 'prose',
+  });
+  assert.deepEqual(getTemplateContract(join(dir, 'cover-letter-template.md')), {
+    evidenceMin: 0,
+    evidenceMax: 4,
+    evidenceStyle: 'bullets',
+  });
+});
+
+test('getTemplateContract: rejects invalid cover evidence metadata', () => {
+  const dir = fixtureDir();
+  const custom = join(dir, 'cover-letter-template.invalid.md');
+  writeFileSync(custom, `<!-- career-ops-template
+evidence_min: 4
+evidence_max: 2
+evidence_style: cards
+-->`);
+  assert.throws(() => getTemplateContract(custom), /Invalid cover template evidence_max/);
+  writeFileSync(custom, `<!-- career-ops-template
+evidence_min: 2
+evidence_max: 3
+evidence_style: cards
+-->`);
+  assert.throws(() => getTemplateContract(custom), /Invalid cover template evidence_style/);
 });
 
 test('validateTemplate: ok when required placeholders present', () => {
@@ -157,28 +186,6 @@ test('resolveTemplate: base standard when nothing set (backward-compatible)', ()
 test('resolveTemplate: missing named template throws (fail loud)', () => {
   const { dir, profile } = fixtureWithProfile(null);
   assert.throws(() => resolveTemplate('cv', 'nope', { dir, profilePath: profile }), /not found/);
-});
-
-test('resolveTemplate: CV Markdown honors profile and explicit selection', () => {
-  const { dir, profile } = fixtureWithProfile('long-dang');
-  assert.ok(resolveTemplate('cv', undefined, { dir, profilePath: profile, format: 'md' }).endsWith('cv-template.long-dang.md'));
-  assert.ok(resolveTemplate('cv', 'Long Dang', { dir, profilePath: join(dir, 'missing.yml'), format: 'md' }).endsWith('cv-template.long-dang.md'));
-});
-
-test('resolveTemplate: Markdown validates its full placeholder contract', () => {
-  const { dir, profile } = fixtureWithProfile(null);
-  writeFileSync(join(dir, 'cv-template.broken.md'), '{{NAME}}{{EXPERIENCE}}{{EDUCATION}}');
-  assert.throws(
-    () => resolveTemplate('cv', 'broken', { dir, profilePath: profile, format: 'md' }),
-    /missing required placeholders.*CONTACT_LINE.*SUMMARY_TEXT/
-  );
-});
-
-test('resolveTemplate: cover Markdown and CV formats keep boundaries', () => {
-  const { dir, profile } = fixtureWithProfile(null);
-  assert.throws(() => resolveTemplate('cv', undefined, { dir, profilePath: profile, format: 'pdf' }), /Unsupported template format/);
-  assert.ok(resolveTemplate('cover', undefined, { dir, profilePath: profile, format: 'md' }).endsWith('cover-letter-template.md'));
-  assert.throws(() => resolveTemplate('cover', undefined, { dir, profilePath: profile, format: 'tex' }), /Unsupported template format/);
 });
 
 test('resolveTemplate: fallback=true drops missing name to standard', () => {

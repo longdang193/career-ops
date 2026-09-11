@@ -240,11 +240,8 @@ Why applying + functional summary. Derived from Angle A. Uses JD mirror vocabula
 Years of experience, current/most recent role, domain. Read from cv.md summary.
 Tone matches user's choice from Step 6D.
 
-[Achievements — 4-5 bullets]
-• **Lead phrase,** impact sentence with metric.
-• **Lead phrase,** impact sentence with metric.
-• **Lead phrase,** impact sentence with metric.
-• **Lead phrase,** impact sentence with metric.
+[Evidence block — count and presentation come from selected template contract]
+**Lead phrase,** action and outcome supported by evidence.
 
 [Problems I will solve — 2-3 sentences]
 Derived from: confirmed research (Step 3) + Angle B + Angle C.
@@ -277,8 +274,8 @@ contracts, plus the bans that are stricter than the shared list.
 4. **Buzzwords beyond the shared list** — also hard-banned in a cover letter: holistic, championed, orchestrated, excited, stakeholder alignment, data-driven (say what the data drove instead), actionable insights, move the needle, north star, unique opportunity, perfect fit, strong track record
 5. **No filler openers** — never "I am pleased to", "I am writing to express", "I am excited to"
 6. **Concrete over abstract** — every claim needs a number, system name, or specific outcome. "Improved performance" is banned. "Cut latency from 2s to 380ms" is fine.
-7. **350-420 words** total body (header + credentials not counted)
-8. **Bullet format** — `**Bold lead phrase,** impact sentence with metric.` No em dash between lead and sentence.
+7. **Word budget** — read `cover_letter.constraints` from `config/profile.yml`; default target is 370 words with a 320-420 hard range when configured.
+8. **Evidence format** — use `evidence_min`, `evidence_max`, and `evidence_style` from the selected template contract. Every block uses action + evidence + outcome. No em dash between lead and sentence.
 9. **Self-check** — before finalising, re-read each sentence: could it appear in any cover letter for any company? If yes, rewrite it.
 10. **Tone consistency** — apply the chosen tone (Step 6D) uniformly. Don't shift register mid-letter.
 
@@ -292,6 +289,9 @@ hardcode a template path):
   `cover_letter.template` default, or the base Markdown template when unset).
 
 Fill the resolved template's `{{...}}` placeholders. A non-zero exit means the named template is missing/invalid — surface it, do not silently fall back.
+Template metadata controls presentation only: headings, order, evidence block
+count, and prose-versus-bullet rendering. It does not change fact ownership or
+global writing rules.
 
 ## Step 9 — Generate Markdown
 
