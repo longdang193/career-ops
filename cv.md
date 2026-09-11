@@ -46,12 +46,15 @@ Vietnam · 2019-06 – 2021-06
 
 2026-03 — present · https://github.com/longdang193/fitcv
 
-Built an AI-assisted job-matching and CV-generation pipeline that turns noisy job inputs into structured, reviewable outputs through staged filtering, shortlisting, ranking, evidence analysis, generation, validation, and artifact-backed inspection. The workflow limits unnecessary late-stage AI processing through deterministic gates and keeps run decisions, diagnostics, and generated outputs traceable for review.
+Built an AI-assisted HR-tech decision-support pipeline for job matching and CV generation that turns noisy job inputs into structured, reviewable outputs through staged filtering, shortlisting, ranking, evidence analysis, generation, validation, and artifact-backed inspection. The workflow limits unnecessary late-stage AI processing through deterministic gates and keeps run decisions, diagnostics, and generated outputs traceable for review.
+
+Tech stack: Python/FastAPI, SQLite, React/TypeScript/Vite, YAML, OpenAI-compatible providers, pytest, Vitest, and Playwright.
 
 - Designed a staged workflow that filters, evaluates, and refines job opportunities before CV generation, keeping expensive late-stage processing focused on stronger candidates.
 - Combined deterministic eligibility rules, vector-based shortlisting, AI ranking, and evidence-based CV analysis so match decisions can be inspected before generation.
 - Added stage gates and validation checks to catch unsupported matches and output issues before final CV delivery.
 - Persisted run, job, stage, and artifact evidence so filtered, blocked, failed, and review-required outcomes remain inspectable.
+- Implemented a store-backed inverse-optimization and preference-learning workflow that converts user ratings into decision episodes, evaluates preference residuals, solves candidate policy updates, applies promotion gates, and protects personalized ranking from stale evidence or configuration changes.
 - Used AI coding agents in Git-tracked development workflows for implementation, multi-agent delegation, testing, independent review, and release verification, with evidence-backed changes and human-controlled acceptance.
 - Used configuration-owned policies and routing so matching and generation behavior can be adjusted without rewriting core stage logic.
 
