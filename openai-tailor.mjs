@@ -22,8 +22,10 @@ import { fileURLToPath } from 'url';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import * as yaml from 'js-yaml';
 import { assertArtifactDraft } from './lib/artifact-draft.mjs';
+import { normalizeCvPayload } from './lib/cv-payload-schema.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { assertFacts } from './verify-cv-facts.mjs';
+import { assertEvidenceCompression } from './lib/evidence-compression-gate.mjs';
 
 try {
   const { config } = await import('dotenv');
@@ -240,6 +242,8 @@ IMPORTANT OPERATING RULES FOR THIS SESSION
 2. Inject keywords only by reformulating facts explicitly present in [cv.md] or [article-digest.md]. If a JD keyword cannot be mapped to source text, omit it.
 3. Apply the 6-second clarity gate: strongest matching evidence first.
 4. Return one JSON object containing only tailored CV content fields: candidate, summary, competencies, experience, projects, education, certifications, awards, interests, skills.
+   Match the selected Markdown template's full entry structure. For every retained experience entry return role, company, location, dates, a non-empty one-sentence description derived from its source bullets, and no more than four bullets. Return no more than three projects; each project must specify technology, methodology, or domain in its tech field, plus dates, url, factual description, and no more than four bullets. For every retained education entry return title, university, country only, year, and no more than five relevant subjects. Return two to five certifications with title, url, org, year, and focus when present in the source. For every selected certification, return focus as an array of two to five concise, source-grounded focus items. Preserve these fields from [cv.md] even when tailoring changes wording; never omit them or return empty strings merely because they are not central to the job.
+   Every bullet must follow action + evidence/outcome. Use precise verbs, concrete methods or metrics, and the shortest accurate wording. Keep the summary at 60 words or fewer and keep visible CV content between 500 and 650 words.
 5. Do NOT return HTML, CSS, Markdown fences, layout, style, template, or page-break fields.
 6. Return JSON only, with no conversational filler.`;
 
@@ -269,7 +273,7 @@ export function parseProviderContent(raw, { template, renderFormat, jobContext }
   }
   let tailoredContent;
   try {
-    tailoredContent = JSON.parse(text);
+    tailoredContent = normalizeCvPayload(JSON.parse(text));
   } catch (err) {
     throw new Error(`Provider response is not valid JSON: ${err.message}`);
   }
@@ -344,6 +348,13 @@ try {
     sourcePaths: [PATHS.cv, join(DATA_ROOT, 'article-digest.md')],
     configPath: join(DATA_ROOT, 'config', 'cv-facts.json'),
   });
+  const quality = assertEvidenceCompression(artifactDraft.tailored_content, 'cv', {
+    strict: selectedTemplate === 'long-dang',
+  });
+  if (quality.reviewFindings.length) {
+    console.warn(`⚠️  Evidence compression review: ${quality.reviewFindings.length} item(s) flagged.`);
+    for (const finding of quality.reviewFindings) console.warn(`    - ${finding}`);
+  }
 } catch (err) {
   console.error(`❌  ${err.message}`);
   process.exit(1);

@@ -46,7 +46,9 @@ Run `npm run jd:similarity -- {bundle-root}/jd/current.md {bundle-root}/jd/previ
 19. Run the fact gate against the generated HTML: `node verify-cv-facts.mjs {html-path}`
     - This is a hard gate before PDF rendering.
     - If it fails, stop and fix the generated HTML by removing invented metrics or adding verified evidence to `cv.md`, `article-digest.md`, or `config/cv-facts.json`.
-20. **Optional LLM CV audit — off by default, opt-in only.** Run `modes/cv-audit.md` if and only if one of these is true; otherwise skip straight to Step 21 without prompting.
+20. Run the shared evidence compression gate from `lib/evidence-compression-gate.mjs` against the structured draft. Hard failures stop output; review findings flag long or weak action/evidence/outcome bullets for the optional audit.
+    - The CV contract keeps visible content between 500 and 650 words, caps the summary at 60 words, requires two to five certifications, each with two to five focus items, caps projects at three, and limits education to five relevant subjects with university and country only.
+21. **Optional LLM CV audit — off by default, opt-in only.** Run `modes/cv-audit.md` if and only if one of these is true; otherwise skip straight to Step 22 without prompting.
     - The invocation carried `--llm-audit` (`/career-ops pdf --llm-audit`, or the same flag on a natural-language request).
     - The invocation carried the legacy `--hm-audit` flag; use `modes/pdf/hm-audit.md` as the PDF-specific reviewer adapter.
     - `modes/_custom.md` turns it on as a house rule.
@@ -55,11 +57,11 @@ Run `npm run jd:similarity -- {bundle-root}/jd/current.md {bundle-root}/jd/previ
     The Markdown/structured draft remains the canonical audit input; HTML and PDF are derived outputs. The fact gate proves nothing was invented; it cannot tell you whether these are the *right* bullets for the role. The audit returns a structured bullet and section review, with a separate reviewer when available. It is opted in because it adds model cost and may require an external model call.
 
     The audit recommends; the user decides. Follow `modes/cv-audit.md` cycle policy: accept rewrites only after user confirmation, return to Step 17, rebuild the payload and HTML, rerun deterministic checks, and run at most one additional audit cycle. Persist `review_cycle`, `max_review_cycles`, and `artifact_hash` only after the decision is known. Never launch cycle 3.
-21. Execute: `node generate-pdf.mjs {html-path} {pdf-path} --format={letter|a4} --report={report number}`, where `{pdf-path}` is the active bundle's `cv/tailored/vNNN/cv.pdf` or `output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf` for a one-off CV. `{report number}` is the NNN from the report filename/link (e.g. `008` for `reports/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `data/pdf-index.tsv` so the dashboard can open and regenerate the exact nested or flat HTML/PDF pair. Omit it only for one-off CVs with no tracker entry.
+22. Execute: `node generate-pdf.mjs {html-path} {pdf-path} --format={letter|a4} --report={report number}`, where `{pdf-path}` is the active bundle's `cv/tailored/vNNN/cv.pdf` or `output/cv-{candidate}-{company}-{YYYY-MM-DD}.pdf` for a one-off CV. `{report number}` is the NNN from the report filename/link (e.g. `008` for `reports/008-acme-….md`), not the tracker `#` column. Pass it whenever the application has (or will have) a report; it records the PDF↔report linkage in `data/pdf-index.tsv` so the dashboard can open and regenerate the exact nested or flat HTML/PDF pair. Omit it only for one-off CVs with no tracker entry.
     - The rendered PDF has a two-page warning threshold by default. `--max-pages=N` accepts a positive integer; pass `--max-pages=1` when the user or market prefers a one-page CV.
     - If the rendered PDF exceeds its threshold, generation warns loudly with the actual and allowed page counts plus trimming guidance, then reports and indexes the unchanged PDF so existing longer-CV flows keep working.
     - Pass `--strict-pages` only when the user or market requires a hard limit. Strict overflow leaves the draft available for inspection but does not report or index it as successful; trim lower-priority content and rerun.
-22. Report: PDF path, number of pages, keyword coverage %, and any skill gaps from Step 4 still unaddressed
+23. Report: PDF path, number of pages, keyword coverage %, and any skill gaps from Step 4 still unaddressed
 
 ## ATS Rules (clean parsing)
 

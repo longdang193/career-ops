@@ -32,11 +32,12 @@ import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
-import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
+import { hasRequiredFields, normalizeCvPayload, validatePayload } from './lib/cv-payload-schema.mjs';
 import { assertArtifactDraft } from './lib/artifact-draft.mjs';
 import { renderTemplate } from './lib/template-render.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { assertFacts } from './verify-cv-facts.mjs';
+import { assertEvidenceCompression } from './lib/evidence-compression-gate.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -663,6 +664,7 @@ function renderReport(payload, partials) {
 // Merge a payload into the template and return the final HTML (throws on any
 // unresolved {{PLACEHOLDER}} so a malformed payload fails loudly, not silently).
 function renderHtml(template, payload, templatePath) {
+  payload = normalizeCvPayload(payload);
   // Load section partials from the sections/ directory co-located with the
   // template. Falls back to built-in builders when no partials directory exists.
   const partials = templatePath ? loadSectionPartials(templatePath) : new Map();
@@ -702,47 +704,145 @@ function markdownText(value) {
 }
 
 function markdownList(entries, render) {
-  return Array.isArray(entries) ? entries.map(render).filter(Boolean).join('\n') : '';
+  return Array.isArray(entries) ? entries.map(render).filter(Boolean).join('\n\n') : '';
+}
+
+function markdownLink(label, url) {
+  const text = markdownText(label);
+  const href = markdownText(url);
+  return href ? `[${text}](${href})` : text;
+}
+
+function markdownMeta(value) {
+  return value ? `  : **${markdownText(value)}**` : '';
+}
+
+function formatMarkdownDate(value) {
+  const text = markdownText(value).trim();
+  if (!text) return '';
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const formatMonth = (match, year, month) => `${monthNames[Number(month) - 1] || month} ${year}`;
+  return text
+    .replace(/\b(\d{4})-(0[1-9]|1[0-2])\b/g, formatMonth)
+    .replace(/\s*[–-]\s*/g, ' — ')
+    .replace(/\b(PRESENT|present)\b/g, 'Present');
+}
+
+function renderMarkdownEducation(entry) {
+  const details = entry.description || (entry.coursework || entry.subjects
+    ? `Relevant subjects: ${markdownText(entry.coursework || entry.subjects)}${entry.gpa ? `  \nGPA: ${markdownText(entry.gpa)}` : ''}`
+    : '');
+  const header = [
+    `**${markdownText(entry.title)}**`,
+    markdownMeta([entry.org, entry.location].filter(Boolean).join(', ')),
+    markdownMeta(formatMarkdownDate(entry.year)),
+  ].filter(Boolean).join('\n');
+  return [header, details].filter(Boolean).join('\n\n');
+}
+
+function renderMarkdownExperience(entry) {
+  const bullets = Array.isArray(entry.bullets)
+    ? entry.bullets.map((bullet) => `- ${markdownText(bullet)}`).join('\n')
+    : '';
+  const header = [
+    `**${markdownText(entry.role)}**`,
+    markdownMeta([entry.company, entry.location].filter(Boolean).join(', ')),
+    markdownMeta(formatMarkdownDate(entry.dates || entry.period)),
+  ].filter(Boolean).join('\n');
+  return [header, markdownText(entry.description), bullets].filter(Boolean).join('\n\n');
+}
+
+function renderMarkdownProject(entry) {
+  const bullets = Array.isArray(entry.bullets)
+    ? entry.bullets.map((bullet) => `- ${markdownText(bullet)}`).join('\n')
+    : '';
+  const repository = entry.url
+    ? `<span class="iconify" data-icon="tabler:brand-github"></span>: ${markdownLink(entry.url_display || markdownText(entry.url).replace(/^https?:\/\//, '').replace(/\/+$/, ''), entry.url)}`
+    : '';
+  const header = [
+    `**${markdownText(entry.name)}**`,
+    markdownMeta(entry.tech),
+    markdownMeta(formatMarkdownDate(entry.dates || entry.period)),
+  ].filter(Boolean).join('\n');
+  return [
+    header,
+    repository,
+    markdownText(entry.description),
+    bullets,
+  ].filter(Boolean).join('\n\n');
+}
+
+function renderMarkdownCertification(entry) {
+  const header = [
+    `**${markdownLink(entry.title, entry.url)}**`,
+    markdownMeta(entry.org),
+    markdownMeta(formatMarkdownDate(entry.year)),
+  ].filter(Boolean).join('\n');
+  const focusValue = Array.isArray(entry.focus) ? entry.focus.join(', ') : entry.focus;
+  const focus = focusValue || entry.description ? `Focus: ${markdownText(focusValue || entry.description)}` : '';
+  return [header, focus].filter(Boolean).join('\n\n');
 }
 
 function replaceMarkdownSection(source, section, nextSection, body) {
-  const sectionRe = new RegExp(`(## ${section}\\s*\\r?\\n)[\\s\\S]*?(?=\\r?\\n## ${nextSection}\\s*\\r?\\n)`);
+  const sectionRe = new RegExp(`(## ${section}[ \\t]*\\r?\\n)(?:\\r?\\n)?[\\s\\S]*?(?=\\r?\\n## ${nextSection}[ \\t]*\\r?\\n)`);
   if (body) return source.replace(sectionRe, `$1\n${body.trim()}\n`);
   return source.replace(sectionRe, '');
 }
 
 function renderReferenceMarkdown(template, replacements) {
-  let source = template.replace(/^# \[FULL NAME\]$/m, `# ${replacements['{{NAME}}']}`);
-  source = source.replace(/^# .*?\r?\n\r?\n[\s\S]*?(?=\r?\n## Summary)/m, (block) => {
-    const heading = block.match(/^# .*$/m)?.[0] || '#';
-    return `${heading}\n\n${replacements['{{CONTACT_LINE}}']}\n`;
-  });
+  let source = template
+    .replace(/^<!-- Reference-only template\.[^\n]*\r?\n\r?\n?/i, '')
+    .replace(/^# \[FULL NAME\]$/m, `# ${replacements['{{NAME}}']}`);
+  const contactReplacements = {
+    '[email@example.com]': replacements['{{EMAIL_DISPLAY}}'],
+    'mailto:email@example.com': replacements['{{EMAIL_HREF}}'],
+    '[(+00) 00000 000000]': replacements['{{PHONE_DISPLAY}}'],
+    'tel:+00000000000': replacements['{{PHONE_HREF}}'],
+    '[linkedin.com/in/username]': replacements['{{LINKEDIN_DISPLAY}}'],
+    'https://www.linkedin.com/in/username/': replacements['{{LINKEDIN_HREF}}'],
+    '[github.com/username]': replacements['{{GITHUB_DISPLAY}}'],
+    'https://github.com/username': replacements['{{GITHUB_HREF}}'],
+    '[City, Country]': replacements['{{LOCATION_DISPLAY}}'],
+  };
+  for (const [token, value] of Object.entries(contactReplacements)) {
+    source = source.replaceAll(token, value);
+  }
   source = replaceMarkdownSection(source, 'Summary', 'Education', replacements['{{SUMMARY_TEXT}}']);
   source = replaceMarkdownSection(source, 'Education', 'Experience', replacements['{{EDUCATION}}']);
   source = replaceMarkdownSection(source, 'Experience', 'Projects', replacements['{{EXPERIENCE}}']);
   source = replaceMarkdownSection(source, 'Projects', 'Certificates', replacements['{{PROJECTS}}']);
   source = replaceMarkdownSection(source, 'Certificates', 'Skills', replacements['{{CERTIFICATIONS}}']);
-  return source.replace(/(## Skills\s*\r?\n)[\s\S]*$/m, `$1\n${replacements['{{SKILLS}}'].trim()}\n`);
+  return source.replace(/(## Skills[ \t]*\r?\n)(?:\r?\n)?[\s\S]*$/m, `$1\n${replacements['{{SKILLS}}'].trim()}\n`);
 }
 
 function renderMarkdown(template, payload) {
+  payload = normalizeCvPayload(payload);
   const candidate = payload.candidate || {};
   const linkValue = (value) => typeof value === 'object' ? (value.display || value.url || '') : value;
+  const linkHref = (value) => typeof value === 'object' ? (value.url || '') : value;
+  const email = markdownText(candidate.email);
+  const phone = markdownText(candidate.phone);
+  const linkedin = candidate.linkedin || {};
+  const github = candidate.github || {};
   const replacements = {
     '{{NAME}}': markdownText(candidate.name),
     '{{CONTACT_LINE}}': [candidate.location, candidate.email, candidate.phone, candidate.linkedin, candidate.github, candidate.portfolio]
       .map(linkValue).filter(Boolean).map(markdownText).join(' | '),
     '{{SUMMARY_TEXT}}': markdownText(payload.summary),
-    '{{EDUCATION}}': markdownList(payload.education, (entry) => `- **${markdownText(entry.title)}**${entry.org ? ` — ${markdownText(entry.org)}` : ''}${entry.year ? ` (${markdownText(entry.year)})` : ''}`),
-    '{{EXPERIENCE}}': markdownList(payload.experience, (entry) => {
-      const heading = [entry.role, entry.company].filter(Boolean).map(markdownText).join(' · ');
-      const meta = [entry.location, entry.dates || entry.period].filter(Boolean).map(markdownText).join(' · ');
-      const bullets = Array.isArray(entry.bullets) ? entry.bullets.map((bullet) => `- ${markdownText(bullet)}`).join('\n') : '';
-      return [`### ${heading}`, meta, bullets].filter(Boolean).join('\n');
-    }),
-    '{{PROJECTS}}': markdownList(payload.projects, (entry) => [`- **${markdownText(entry.name)}**`, markdownText(entry.description), Array.isArray(entry.bullets) ? entry.bullets.map((bullet) => `  - ${markdownText(bullet)}`).join('\n') : ''].filter(Boolean).join('\n')),
-    '{{CERTIFICATIONS}}': markdownList(payload.certifications, (entry) => `- **${markdownText(entry.title)}**${entry.org ? ` — ${markdownText(entry.org)}` : ''}${entry.year ? ` (${markdownText(entry.year)})` : ''}`),
+    '{{EDUCATION}}': markdownList(payload.education, renderMarkdownEducation),
+    '{{EXPERIENCE}}': markdownList(payload.experience, renderMarkdownExperience),
+    '{{PROJECTS}}': markdownList(payload.projects, renderMarkdownProject),
+    '{{CERTIFICATIONS}}': markdownList(payload.certifications, renderMarkdownCertification),
     '{{SKILLS}}': markdownList(payload.skills, (entry) => `${entry.category ? `**${markdownText(entry.category)}:** ` : ''}${Array.isArray(entry.items) ? entry.items.map(markdownText).join(', ') : markdownText(entry.items)}`),
+    '{{EMAIL_DISPLAY}}': `[${email}]`,
+    '{{EMAIL_HREF}}': `mailto:${email}`,
+    '{{PHONE_DISPLAY}}': `[${phone}]`,
+     '{{PHONE_HREF}}': `tel:${phone.replace(/[^\d+]/g, '')}`,
+    '{{LINKEDIN_DISPLAY}}': `[${markdownText(linkValue(linkedin))}]`,
+    '{{LINKEDIN_HREF}}': linkHref(linkedin),
+    '{{GITHUB_DISPLAY}}': `[${markdownText(linkValue(github))}]`,
+    '{{GITHUB_HREF}}': linkHref(github),
+    '{{LOCATION_DISPLAY}}': markdownText(candidate.location),
   };
   if (!template.includes('{{')) return renderReferenceMarkdown(template, replacements);
   let source = template;
@@ -845,7 +945,7 @@ async function main() {
   try {
     payload = JSON.parse(await readFile(absInput, 'utf-8'));
     draftInfo = unwrapArtifactDraft(payload);
-    payload = draftInfo.payload;
+    payload = normalizeCvPayload(draftInfo.payload);
     markdown ||= draftInfo.renderFormat === 'text';
     if (!templateArg) {
       templatePath = resolveTemplate('cv', draftInfo.templateName, { format: markdown ? 'md' : 'html', fallback: true });
@@ -870,6 +970,19 @@ async function main() {
   }
   for (const message of warnings) console.error(`Warning: ${message}`);
 
+  let quality;
+  try {
+    quality = assertEvidenceCompression(payload, 'cv', {
+      strict: basename(templatePath).toLowerCase().includes('cv-template.long-dang'),
+    });
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  if (quality.reviewFindings.length) {
+    console.error(`Evidence compression review: ${quality.reviewFindings.length} item(s) flagged.`);
+  }
+
   const template = await readFile(templatePath, 'utf-8');
 
   let html;
@@ -881,7 +994,9 @@ async function main() {
     process.exit(1);
   }
 
-  await writeAndReport(html, absOutput, payload, preview ? { status: 'preview-ready', warnings } : { warnings });
+  const qualityWarnings = quality.reviewFindings.map((finding) => `evidence compression: ${finding}`);
+  const allWarnings = [...warnings, ...qualityWarnings];
+  await writeAndReport(html, absOutput, payload, preview ? { status: 'preview-ready', warnings: allWarnings } : { warnings: allWarnings });
   process.exit(0);
 }
 
