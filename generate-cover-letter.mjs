@@ -96,6 +96,13 @@ function asUrl(value) {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
+function profileLink(value) {
+  if (typeof value === 'object' && value !== null) {
+    return { url: value.url || '', display: value.display || value.url || '' };
+  }
+  return { url: value || '', display: value || '' };
+}
+
 /** Build the escaped contact line shown in the cover-letter header. */
 function buildContactLine(candidate) {
   const parts = [];
@@ -106,12 +113,12 @@ function buildContactLine(candidate) {
   }
   if (candidate.phone) parts.push(escapeHtml(candidate.phone));
   if (candidate.linkedin) {
-    const display = candidate.linkedin.replace(/^https?:\/\//i, "");
-    parts.push(`<a href="${escapeHtml(asUrl(candidate.linkedin))}">${escapeHtml(display)}</a>`);
+    const link = profileLink(candidate.linkedin);
+    parts.push(`<a href="${escapeHtml(asUrl(link.url))}">${escapeHtml(link.display.replace(/^https?:\/\//i, ""))}</a>`);
   }
   if (candidate.github) {
-    const display = candidate.github.replace(/^https?:\/\//i, "");
-    parts.push(`<a href="${escapeHtml(asUrl(candidate.github))}">${escapeHtml(display)}</a>`);
+    const link = profileLink(candidate.github);
+    parts.push(`<a href="${escapeHtml(asUrl(link.url))}">${escapeHtml(link.display.replace(/^https?:\/\//i, ""))}</a>`);
   }
   return parts.join(" &nbsp;|&nbsp; ");
 }
@@ -201,10 +208,9 @@ function buildLongDangMarkdownContactLine(candidate) {
     links.push({ icon: 'tabler:phone', href: `tel:${phone.replace(/[^\d+]/g, '')}`, label: phone });
   }
   for (const [field, icon] of [['linkedin', 'tabler:brand-linkedin'], ['github', 'tabler:brand-github']]) {
-    const value = candidate[field];
-    if (!value) continue;
-    const url = typeof value === 'object' ? value.url || '' : value;
-    const display = typeof value === 'object' ? value.display || url : value;
+    const link = profileLink(candidate[field]);
+    const url = link.url;
+    const display = link.display;
     if (!url || !display) continue;
     links.push({ icon, href: asUrl(url), label: display.replace(/^https?:\/\//i, '').replace(/\/+$/, '') });
   }
@@ -221,6 +227,85 @@ function buildMarkdownAchievementsProseBlock(achievements) {
     const impact = escapeHtml(achievement.impact || '');
     return [lead && `${lead},`, impact].filter(Boolean).join(' ');
   }).filter(Boolean).join('\n\n');
+}
+
+function normalizeTimelineBlock(block) {
+  if (block && typeof block === 'object') {
+    return { title: block.title || '', text: block.text || block.body || '' };
+  }
+  return { title: '', text: block || '' };
+}
+
+function buildTimelineSection(kicker, block, { focus = false } = {}) {
+  const normalized = normalizeTimelineBlock(block);
+  const title = normalized.title ? `<p class="tl-title">${escapeHtml(normalized.title)}</p>` : '';
+  const text = normalized.text ? `<p class="tl-text">${escapeHtml(normalized.text)}</p>` : '';
+  const content = focus
+    ? `<div class="tl-highlight">${title}${text}</div>`
+    : `${title}${text}`;
+  return `<section class="tl-item${focus ? ' tl-focus' : ''}">
+<div class="tl-content">
+<h2 class="tl-kicker">${escapeHtml(kicker)}</h2>
+${content}
+</div>
+</section>`;
+}
+
+function buildReverseExperienceBlock(experience) {
+  if (!experience || !experience.length) return '';
+  const groups = experience.map((group) => {
+    const title = escapeHtml(group.title || group.name || '');
+    const bullets = Array.isArray(group.bullets)
+      ? group.bullets
+      : [group.text || group.impact].filter(Boolean);
+    if (!title || !bullets.length) return '';
+    const items = bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join('\n');
+    return `<div class="branch-node">
+<h3 class="branch-title">${title}</h3>
+<ul class="leaf-list">
+${items}
+</ul>
+</div>`;
+  }).filter(Boolean).join('\n\n');
+  if (!groups) return '';
+  return `<section class="tl-item">
+<div class="tl-content">
+<h2 class="tl-kicker">RELEVANT EXPERIENCE</h2>
+<div class="branch-group">
+${groups}
+</div>
+</div>
+</section>`;
+}
+
+function buildReverseContributionBlock(contribution) {
+  const normalized = normalizeTimelineBlock(contribution);
+  const bullets = Array.isArray(contribution?.bullets) ? contribution.bullets : [];
+  const title = normalized.title ? `<p class="tl-title">${escapeHtml(normalized.title)}</p>` : '';
+  const list = bullets.length
+    ? `<ul class="leaf-list contribution-list">\n${bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join('\n')}\n</ul>`
+    : '';
+  return `<section class="tl-item">
+<div class="tl-content">
+<h2 class="tl-kicker">WHAT I WOULD CONTRIBUTE</h2>
+${title}
+${list}
+</div>
+</section>`;
+}
+
+function validateTimelinePayload(source, letter) {
+  if (!source.includes('{{ATTENTION_BLOCK}}')) return;
+  for (const key of ['attention', 'challenge', 'perspective', 'contribution']) {
+    if (!letter[key]) throw new Error(`Missing required field: letter.${key}`);
+  }
+  if (!Array.isArray(letter.experience)) {
+    throw new Error('Missing required field: letter.experience');
+  }
+}
+
+function evidenceItems(letter = {}) {
+  return Array.isArray(letter.experience) ? letter.experience : (letter.achievements || []);
 }
 
 function validateEvidenceCount(achievements, contract, hasEvidenceSlot = true) {
@@ -250,10 +335,25 @@ function visibleWordCount(text) {
 }
 
 function buildCoverBodyText(letter = {}) {
+  const timelineBlocks = [letter.attention, letter.challenge, letter.perspective]
+    .flatMap((block) => {
+      const normalized = normalizeTimelineBlock(block);
+      return [normalized.title, normalized.text];
+    });
+  const experienceText = (letter.experience || []).flatMap((group) => [
+    group.title || group.name,
+    ...(group.bullets || [group.text || group.impact]).filter(Boolean),
+  ]);
+  const contribution = normalizeTimelineBlock(letter.contribution);
   return [
     letter.opening,
     letter.profile_intro,
     letter.problems_section,
+    ...timelineBlocks,
+    ...experienceText,
+    contribution.title,
+    contribution.text,
+    ...(letter.contribution?.bullets || []),
     ...(letter.achievements || []).flatMap(({ lead, impact }) => [lead, impact]),
     letter.closing,
     letter.language_closing,
@@ -284,6 +384,17 @@ function buildMarkdownSignatureBlock(signature, candidateName) {
   if (valediction) lines.push(escapeHtml(valediction));
   if (name) lines.push(`**${escapeHtml(name)}**`);
   return lines.join("\n");
+}
+
+function buildMarkdownHtmlSignatureBlock(signature, candidateName) {
+  if (!signature) return "";
+  const isObject = typeof signature === "object" && signature !== null;
+  const valediction = isObject ? signature.valediction : signature;
+  const name = (isObject ? signature.name : "") || candidateName || "";
+  const lines = [];
+  if (valediction) lines.push(escapeHtml(valediction));
+  if (name) lines.push(`<strong>${escapeHtml(name)}</strong>`);
+  return `<p class="signature">${lines.join("<br>")}</p>`;
 }
 
 // Resolve the cover-letter template through the shared resolver so a
@@ -341,10 +452,16 @@ function buildReplacements(payload) {
     "{{PROFILE_INTRO}}": escapeHtml(letter.profile_intro),
     "{{ACHIEVEMENTS_BLOCK}}": buildAchievementsBlock(letter.achievements),
     "{{ACHIEVEMENTS_PROSE_BLOCK}}": buildMarkdownAchievementsProseBlock(letter.achievements),
+    "{{ATTENTION_BLOCK}}": buildTimelineSection("WHAT CAUGHT MY ATTENTION", letter.attention),
+    "{{CHALLENGE_BLOCK}}": buildTimelineSection("THE CHALLENGE", letter.challenge),
+    "{{PERSPECTIVE_BLOCK}}": buildTimelineSection("MY PERSPECTIVE", letter.perspective, { focus: true }),
+    "{{RELEVANT_EXPERIENCE_BLOCK}}": buildReverseExperienceBlock(letter.experience),
+    "{{CONTRIBUTION_BLOCK}}": buildReverseContributionBlock(letter.contribution),
     "{{PROBLEMS_BLOCK}}": problemsBlock,
     "{{CLOSING_BLOCK}}": closingBlock,
     "{{LANGUAGE_CLOSING_BLOCK}}": languageClosingBlock,
     "{{SIGNATURE_BLOCK}}": signatureBlock,
+    "{{SIGNATURE_HTML_BLOCK}}": buildMarkdownHtmlSignatureBlock(letter.signature, candidate.name),
     "{{FOOTNOTES_BLOCK}}": buildFootnotesBlock(letter.footnotes),
   };
 
@@ -386,8 +503,9 @@ export function buildHtml(payload, templatePath) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
   const contract = getTemplateContract(resolvedPath);
   const source = readFileSync(resolvedPath, "utf-8");
+  validateTimelinePayload(source, payload.letter);
   const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
-  validateEvidenceCount(payload.letter.achievements, contract, hasEvidenceSlot);
+  validateEvidenceCount(evidenceItems(payload.letter), contract, hasEvidenceSlot || source.includes('{{RELEVANT_EXPERIENCE_BLOCK}}'));
   return renderTemplate(source, buildReplacements(payload));
 }
 
@@ -395,14 +513,18 @@ export function buildMarkdown(payload, templatePath) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
   const source = readFileSync(resolvedPath, "utf-8");
   const contract = getTemplateContract(resolvedPath);
+  validateTimelinePayload(source, payload.letter);
   const evidenceToken = contract.evidenceStyle === 'prose'
     ? '{{ACHIEVEMENTS_PROSE_BLOCK}}'
     : '{{ACHIEVEMENTS_BLOCK}}';
-  const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
-  if (hasEvidenceSlot && !source.includes(evidenceToken)) {
-    throw new Error(`Cover template evidence_style=${contract.evidenceStyle} requires ${evidenceToken}`);
+  const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}') || source.includes('{{RELEVANT_EXPERIENCE_BLOCK}}');
+  const selectedEvidenceToken = contract.evidenceSlot === 'experience'
+    ? '{{RELEVANT_EXPERIENCE_BLOCK}}'
+    : evidenceToken;
+  if (hasEvidenceSlot && !source.includes(selectedEvidenceToken)) {
+    throw new Error(`Cover template evidence_style=${contract.evidenceStyle} requires ${selectedEvidenceToken}`);
   }
-  validateEvidenceCount(payload.letter.achievements, contract, hasEvidenceSlot);
+  validateEvidenceCount(evidenceItems(payload.letter), contract, hasEvidenceSlot);
   const replacements = buildReplacements(payload);
   replacements["{{GREETING_BLOCK}}"] = escapeHtml(payload.letter.greeting || "");
   replacements["{{ACHIEVEMENTS_BLOCK}}"] = buildMarkdownAchievementsBlock(payload.letter.achievements);
@@ -472,7 +594,7 @@ Usage:
 
   try {
     const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
-    if (markdown) validateCoverConstraints(buildCoverBodyText(payload.letter), payload.letter?.achievements || []);
+    if (markdown) validateCoverConstraints(buildCoverBodyText(payload.letter), evidenceItems(payload.letter));
     // Cover letters are candidate-facing documents too. Reuse the CV fact
     // validator before importing Playwright or writing a PDF so a failed gate
     // cannot leave behind a misleading artifact.

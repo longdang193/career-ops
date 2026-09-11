@@ -274,7 +274,7 @@ contracts, plus the bans that are stricter than the shared list.
 4. **Buzzwords beyond the shared list** — also hard-banned in a cover letter: holistic, championed, orchestrated, excited, stakeholder alignment, data-driven (say what the data drove instead), actionable insights, move the needle, north star, unique opportunity, perfect fit, strong track record
 5. **No filler openers** — never "I am pleased to", "I am writing to express", "I am excited to"
 6. **Concrete over abstract** — every claim needs a number, system name, or specific outcome. "Improved performance" is banned. "Cut latency from 2s to 380ms" is fine.
-7. **Word budget** — read `cover_letter.constraints` from `config/profile.yml`; default target is 370 words with a 320-420 hard range when configured.
+7. **Word budget** — read `cover_letter.constraints` from `config/profile.yml` and enforce its configured `min_words`/`max_words`; do not duplicate numeric limits in this mode.
 8. **Evidence format** — use `evidence_min`, `evidence_max`, and `evidence_style` from the selected template contract. Every block uses action + evidence + outcome. No em dash between lead and sentence.
 9. **Self-check** — before finalising, re-read each sentence: could it appear in any cover letter for any company? If yes, rewrite it.
 10. **Tone consistency** — apply the chosen tone (Step 6D) uniformly. Don't shift register mid-letter.
@@ -350,6 +350,22 @@ Assemble the JSON payload:
 
 Each `achievements[].lead` must be a bare phrase with no trailing comma or other punctuation — `generate-cover-letter.mjs` appends the comma when rendering (see Step 7).
 
+Templates with `evidence_slot: experience` use one shared reverse-timeline shape instead of `achievements`:
+
+```json
+{
+  "attention": {"title": "{what caught attention}", "text": "{why it matters}"},
+  "challenge": {"title": "{role challenge}", "text": "{how the challenge is understood}"},
+  "perspective": {"title": "{candidate principle}", "text": "{supporting perspective}"},
+  "experience": [
+    {"title": "{domain}", "bullets": ["{action and evidence}", "{outcome}"]}
+  ],
+  "contribution": {"title": "{contribution thesis}", "bullets": ["{contribution}"]}
+}
+```
+
+Keep `experience` within the selected template contract; the reverse-timeline template permits two to four branches. Use one evidence source, not duplicate `achievements` and `experience` claims.
+
 Write payload to `/tmp/cover-payload-{company-slug}.json`.
 
 Run:
@@ -378,7 +394,7 @@ After the Markdown is confirmed, add a brief note:
 
 - Any JD keywords from Step 4 that could not be incorporated naturally (flag for manual review)
 - Which gap acknowledgments were included and which were omitted, and why
-- Whether the word count hit the 350-420 target (if short or long, note it)
+- Whether the word count stayed within the configured range (if short or long, note it)
 
 ---
 

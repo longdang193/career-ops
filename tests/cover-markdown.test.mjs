@@ -16,36 +16,36 @@ function fixture() {
   );
   writeFileSync(
     join(dir, 'cover-letter-template.long-dang.md'),
-    '<!-- career-ops-template\nname: Long Dang\nversion: 1.0.0\n-->\n# {{NAME}}\n{{ROLE_TITLE}}\n{{OPENING}}',
+    '<!-- career-ops-template\nname: Example Candidate\nversion: 1.0.0\n-->\n# {{NAME}}\n{{ROLE_TITLE}}\n{{OPENING}}',
   );
   const profile = join(dir, 'profile.yml');
   writeFileSync(profile, 'cover_letter:\n  template: long-dang\n');
   return { dir, profile };
 }
 
-test('Long Dang Markdown matches reference header and prose structure', () => {
+test('Markdown matches reference header and prose structure', () => {
   const markdown = buildMarkdown({
     candidate: {
-      name: 'EXAMPLE CANDIDATE',
-      subtitle: 'Analytics Candidate · Data and Analytics Candidate',
+      name: 'Example Candidate',
+      subtitle: 'Analytics Candidate',
       email: 'candidate@example.test',
       phone: '+00 00000 000000',
-      linkedin: 'https://example.com/in/example',
+      linkedin: 'https://example.com/in/candidate',
       github: 'https://github.com/example',
       quote: 'Work with discipline; let results speak.',
     },
     letter: {
       recipient_team: 'Company Recruitment Team',
-      company: 'Beiersdorf AG',
-      company_short_name: 'Beiersdorf',
-      role_title: 'Working Student Global Shopper & Customer Marketing NIVEA (all genders)',
+      company: 'Example Consumer Goods AG',
+      company_short_name: 'Example Consumer Goods',
+      role_title: 'Working Student Commercial Analytics',
       greeting: 'Dear recruitment team,',
-      opening: 'I am pursuing an M.Sc. in Operations Research and Business Analytics.',
+      opening: 'I am pursuing a master’s degree in operations research and business analytics.',
       profile_intro: 'My background combines consumer research and commercial reporting.',
       problems_section: 'This position connects category growth with sales and shopper analysis.',
       achievements: [
-        { lead: 'At Example Retail', impact: 'I combined sales data and customer insights to support product decisions.' },
-        { lead: 'At Example Insights', impact: 'I evaluated consumer and market evidence to improve campaign recommendations.' },
+        { lead: 'At Example Company One', impact: 'I combined sales data and customer insights to support product decisions.' },
+        { lead: 'At Example Company Two', impact: 'I evaluated consumer and market evidence to improve campaign recommendations.' },
       ],
       closing: 'I would welcome the opportunity to discuss my application further.',
       signature: { valediction: 'Sincerely,' },
@@ -55,11 +55,66 @@ test('Long Dang Markdown matches reference header and prose structure', () => {
   assert.match(markdown, /<a href="#">Analytics Candidate/);
   assert.match(markdown, /<span class="resume-header-item"><span class="iconify" data-icon="tabler:mail"><\/span> <a href="mailto:candidate@example.test">candidate@example.test<\/a><\/span>/);
   assert.match(markdown, /<span class="resume-header-item no-separator"><span class="iconify" data-icon="tabler:brand-github"><\/span>/);
-  assert.match(markdown, /\*\*Company Recruitment Team\*\*<br>\n\*\*Beiersdorf AG\*\*/);
-  assert.match(markdown, /## WHY Beiersdorf?/);
-  assert.match(markdown, /At Example Retail, I combined sales data/);
-  assert.doesNotMatch(markdown, /- \*\*At Example Retail/);
-  assert.match(markdown, /<br>\n\nSincerely,\n\*\*EXAMPLE CANDIDATE\*\*/);
+  assert.match(markdown, /\*\*Company Recruitment Team\*\*<br>\n\*\*Example Consumer Goods AG\*\*/);
+  assert.match(markdown, /## WHY Example Consumer Goods?/);
+  assert.match(markdown, /At Example Company One, I combined sales data/);
+  assert.doesNotMatch(markdown, /- \*\*At Example Company One/);
+  assert.match(markdown, /<br>\n\nSincerely,\n\*\*Example Candidate\*\*/);
+});
+
+test('reverse timeline template renders structured sections and experience branches', () => {
+  const template = fileURLToPath(new URL('../templates/cover-letter-template.reverse-timeline.md', import.meta.url));
+  const markdown = buildMarkdown({
+    candidate: {
+      name: 'Example Candidate',
+      subtitle: 'Analytics Candidate',
+      email: 'candidate@example.test',
+      phone: '+00 00000 000000',
+      linkedin: 'https://example.com/in/candidate',
+      github: 'https://github.com/example',
+    },
+    letter: {
+      role_title: 'Working Student Commercial Analytics',
+      company: 'Probe Analytics GmbH',
+      recipient_team: 'Company Recruitment Team',
+      greeting: 'Dear recruitment team,',
+      opening: 'I connect commercial questions with analytical decision support.',
+      profile_intro: 'My experience spans research, reporting, and process improvement.',
+      attention: {
+        title: 'This role connects commercial questions with analytical decision support.',
+        text: 'It brings data, market understanding, and business decisions together.',
+      },
+      challenge: {
+        title: 'How can scattered signals become timely action?',
+        text: 'The value lies in identifying what matters for the next decision.',
+      },
+      perspective: {
+        title: 'Useful analysis shortens the distance between evidence and action.',
+        text: 'That principle guides my work across research and analytics.',
+      },
+      experience: [
+        { title: 'Consumer Research', bullets: ['Combined consumer and market evidence.', 'Identified meaningful patterns.'] },
+        { title: 'Analytics', bullets: ['Worked with sales and campaign data.', 'Built structured decision support.'] },
+      ],
+      contribution: {
+        title: 'A perspective connecting context, evidence, and execution.',
+        bullets: ['Structure commercial questions.', 'Translate findings into concise outputs.'],
+      },
+      closing: 'I would welcome the opportunity to discuss my contribution further.',
+      signature: { valediction: 'Sincerely,' },
+    },
+  }, template);
+
+  assert.match(markdown, /<div class="reverse-letter">/);
+  assert.match(markdown, /<h2 class="tl-kicker">WHAT CAUGHT MY ATTENTION<\/h2>/);
+  assert.match(markdown, /<h2 class="tl-kicker">THE CHALLENGE<\/h2>/);
+  assert.match(markdown, /<h2 class="tl-kicker">MY PERSPECTIVE<\/h2>/);
+  assert.equal((markdown.match(/class="branch-node"/g) || []).length, 2);
+  assert.match(markdown, /<h3 class="branch-title">Consumer Research<\/h3>/);
+  assert.match(markdown, /<h2 class="tl-kicker">WHAT I WOULD CONTRIBUTE<\/h2>/);
+  assert.match(markdown, /<strong>Example Candidate<\/strong>/);
+  assert.doesNotMatch(markdown, /\*\*Example Candidate\*\*/);
+  assert.doesNotMatch(markdown, /\{\{[A-Z_]+\}\}/);
 });
 
 test('Markdown cover templates resolve and render through shared replacements', () => {

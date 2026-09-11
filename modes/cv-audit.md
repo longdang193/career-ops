@@ -55,8 +55,7 @@ limitation; empty buckets do not prove fit.
 
 ## Inputs
 
-1. The current tailored Markdown or structured render payload. HTML and PDF
-   are derived outputs and are not the primary audit source.
+1. The current tailored Markdown, HTML, or structured render payload.
 2. The archived JD or evaluation report.
 3. `cv.md` and the factual scope files loaded by the parent mode.
 4. The `jd-skill-gap.mjs` result, including `existing`,
@@ -97,6 +96,8 @@ Evaluate:
 - seniority and scope fit
 - contradictions, ambiguity, and missing sections
 - readability for a fast recruiter scan
+- visible-content word count against `cv.constraints` for CVs or
+  `cover_letter.constraints` for cover letters
 - for cover letters: company-specific motivation, evidence-to-claim fit,
   tone, word-count discipline, and unnecessary repetition
 
@@ -164,10 +165,10 @@ the SHA-256 hash of the audited source artifact.
 
 ## Persistence
 
-- Persist `review_cycle`, `max_review_cycles`, and `artifact_hash` beside the
-  derived artifact so the judged artifact remains identifiable. A report may
-  reference the sidecar result after the user decision, but does not become its
-  source of truth.
+- Report-backed run: replace one `## CV Audit` section in the report after the
+  user decision. Never append duplicate audit sections.
+- Persist `review_cycle`, `max_review_cycles`, and `artifact_hash` with the
+  audit result so the judged artifact remains identifiable.
 - Legacy PDF `--hm-audit` runs may keep the existing `## HM Audit` section;
   write one audit section for the run, not both.
 - Standalone run: write the audit beside the derived artifact as

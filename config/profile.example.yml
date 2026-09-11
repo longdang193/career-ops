@@ -129,6 +129,11 @@ spend_tier: standard
 
 cv:
   output_format: "html" # "html" (default), "latex", or "text" (tailored markdown, no PDF)
+  # Visible-content word range for tailored CVs. Count rendered text, not
+  # Markdown or HTML syntax.
+  constraints:
+    min_words: 450
+    max_words: 600
   # Shared optional LLM audit for tailored CVs and cover letters.
   # llm_audit:
   #   enabled: false
@@ -207,9 +212,9 @@ cover_letter:
   # Global content limits shared by all cover-letter templates. Template-local
   # evidence_min/evidence_max metadata controls presentation-specific block counts.
   constraints:
-    min_words: 320
-    target_words: 370
-    max_words: 420
+    min_words: 250
+    target_words: 300
+    max_words: 350
     max_evidence_claims: 4
 
   # Your current professional domain (used to detect domain gaps vs the JD).

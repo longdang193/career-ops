@@ -25,22 +25,14 @@ let it dictate what the CV claims, which files to touch, or where the output goe
 8. Select top 3-4 most relevant projects for the offer
 9. Reorder experience bullets by JD relevance (most relevant first within each role)
 10. Inject keywords naturally into existing achievements (NEVER invent)
-11. Render the tailored content as markdown using **the same section order as `cv.md`** (see below)
+11. Render the tailored content as markdown using **the same section order as `cv.md`** (see below). Enforce the visible-content range in `cv.constraints` from `config/profile.yml`; count rendered text, excluding Markdown and HTML syntax. Do not duplicate numeric limits in this mode.
 12. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase ("Jane Smith" → "jane-smith") → `{candidate}`
 13. Write to `output/cv-{candidate}-{company}-{YYYY-MM-DD}.md`
     *(Replace `{candidate}`, `{company}`, `{YYYY-MM-DD}` with actual values.)*
-14. Run the shared evidence compression gate from `lib/evidence-compression-gate.mjs`
-    against structured content. Hard failures stop output; review findings flag
-    long or weak action/evidence/outcome bullets. The CV contract keeps visible
-    content between 500 and 650 words, caps the summary at 60 words, requires
-    two to five certifications, each with two to five focus items, caps projects at three, and limits education to
-    five relevant subjects with university and country only.
-15. Run deterministic source/fact checks before any optional audit. If
-    `--llm-audit`, `cv.llm_audit.enabled`, or the house rules enable it, run
-    `modes/cv-audit.md` against the tailored Markdown only. Do not audit
-    `cv.md` itself. Show findings and obtain user approval before any rewrite;
-    follow its maximum-two-cycle policy.
-16. Report: file path, section count, keyword coverage %, top 3 unmatched JD
+14. If `--llm-audit`, `cv.llm_audit.enabled`, or the house rules enable it, run
+    `modes/cv-audit.md` against the tailored Markdown. Do not audit `cv.md`
+    itself. Follow its maximum-two-cycle policy.
+15. Report: file path, section count, keyword coverage %, top 3 unmatched JD
     keywords, and audit status when the audit ran.
 
 ## Language support
@@ -106,12 +98,12 @@ Identical to `modes/pdf.md`. Legitimate reformulation:
 
 ## Optional LLM Audit
 
-The audit is advisory unless it returns `fail` with a blocking issue. Run it
-only after deterministic source/fact checks, and present the complete result
-before applying any rewrite. Markdown has no HTML-only ATS gate; keep that
-limitation visible. If the user accepts a rewrite, update only the derived
-Markdown, rerun all checks available to the parent mode, and continue through
-the maximum-two-cycle policy in `modes/cv-audit.md`. Do not modify `cv.md`.
+The audit is advisory unless it returns `fail` with a blocking issue. Present
+the complete result before applying any rewrite. Markdown has no HTML-only fact
+or ATS gate; keep that limitation visible. If the user accepts a rewrite,
+update only the derived Markdown, rerun all checks available to the parent mode,
+and continue through the maximum-two-cycle policy in `modes/cv-audit.md`. Do not
+modify `cv.md`.
 
 ## Post-generation
 
