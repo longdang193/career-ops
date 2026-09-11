@@ -4,7 +4,7 @@
 
 ## Summary
 
-Analytics-focused professional with four years of experience in commercial analysis, market and consumer research, performance reporting, and stakeholder communication. Hands-on experience with Microsoft Excel, reporting, market analysis, and data-driven decision support, complemented by project and academic work in SQL, Python, Power BI, Power Query, data modeling, data visualization, and statistical analysis. Built projects in ecommerce analytics, Azure Machine Learning churn prediction, and AI-assisted job matching and CV generation. Seeking data analyst, business intelligence, reporting, or commercial analytics roles.
+Data and analytics candidate with four years of experience in market and consumer research, commercial and product analysis, performance reporting, and stakeholder communication. Professional experience in Excel-based analysis, recurring reporting, market intelligence, consumer research, and data-driven decision support, complemented by project and academic work in SQL, Python, Power BI, Power Query, analytics engineering, data modeling, machine learning, and operations research. Built projects in ecommerce analytics, Azure Machine Learning churn prediction, and AI-assisted job matching and CV generation. Seeking data analyst, business intelligence, reporting, commercial analytics, or analytics engineering roles.
 
 ## Contact
 
@@ -97,6 +97,8 @@ Hanoi, Vietnam · 2015-09 – 2019-09
 
 Magdeburg, Germany · 2024-10 – Present
 
+- GPA: 1.7 (German scale; 1.0 = best)
+
 - Course: AI-based Decision Support I
 - Course: AI-based Decision Support II
 - Course: Fundamentals of Artificial Intelligence in Production and Logistics
@@ -141,6 +143,7 @@ Magdeburg, Germany · 2024-10 – Present
 - business intelligence (intermediate, 1 years)
 - statistical analysis (intermediate, 1 years)
 - performance analysis (intermediate, 4 years)
+- operations research (intermediate, 2 years)
 
 ### data preparation
 
@@ -150,6 +153,9 @@ Magdeburg, Germany · 2024-10 – Present
 ### data engineering and analytics engineering
 
 - data modeling (intermediate, 1 years)
+- analytics engineering (intermediate, 1 years)
+- data engineering (intermediate, 1 years)
+- bruin (intermediate, 1 years)
 
 ### quality and reliability
 
@@ -182,23 +188,30 @@ Magdeburg, Germany · 2024-10 – Present
 ### data platforms
 
 - google bigquery (beginner, 1 years)
+- sqlite (intermediate, 1 years)
+- google bigquery ml (beginner, 1 years)
 
 ### development tools
 
 - git (intermediate, 1 years)
-- github (beginner, 1 years)
-- ai-assisted software development (intermediate)
+- github (intermediate, 1 years)
+- ai-assisted software development (intermediate, 1 years)
+- fastapi (intermediate, 1 years)
+- github actions (intermediate, 1 years)
+- pytest (intermediate, 1 years)
 
 ### cloud and infrastructure
 
 - docker (beginner, 1 years)
-- azure machine learning (beginner, 1 years)
+- azure machine learning (intermediate, 1 years)
 
 ### machine learning and ai
 
 - machine learning (intermediate, 1 years)
-- ai agent orchestration (intermediate)
-- llm application development (intermediate)
+- ai agent orchestration (intermediate, 1 years)
+- llm application development (intermediate, 1 years)
+- mlops (intermediate, 1 years)
+- mlflow (beginner, 1 years)
 
 ## Certifications
 
@@ -212,7 +225,7 @@ Magdeburg, Germany · 2024-10 – Present
 
 - Vietnamese — native
 - English — C1/C1/C1 (Professional working proficiency)
-- German — A2/A2/A2 (Basic working proficiency)
+- German — B1/B1/B1 (Intermediate working proficiency)
 
 ## Achievements
 

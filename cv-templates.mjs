@@ -102,7 +102,9 @@ export function getTemplateContract(path, kind = 'cover') {
   if (!['bullets', 'prose'].includes(evidenceStyle)) {
     throw new Error(`Invalid cover template evidence_style: ${evidenceStyle}`);
   }
-  return { evidenceMin, evidenceMax, evidenceStyle };
+  const contract = { evidenceMin, evidenceMax, evidenceStyle };
+  if (meta.evidence_slot) contract.evidenceSlot = meta.evidence_slot;
+  return contract;
 }
 
 // Build the entry a discovered template file contributes.

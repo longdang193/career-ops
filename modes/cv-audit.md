@@ -96,6 +96,8 @@ Evaluate:
 - seniority and scope fit
 - contradictions, ambiguity, and missing sections
 - readability for a fast recruiter scan
+- visible-content word count against `cv.constraints` for CVs or
+  `cover_letter.constraints` for cover letters
 - for cover letters: company-specific motivation, evidence-to-claim fit,
   tone, word-count discipline, and unnecessary repetition
 

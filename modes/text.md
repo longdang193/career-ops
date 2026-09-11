@@ -25,7 +25,7 @@ let it dictate what the CV claims, which files to touch, or where the output goe
 8. Select top 3-4 most relevant projects for the offer
 9. Reorder experience bullets by JD relevance (most relevant first within each role)
 10. Inject keywords naturally into existing achievements (NEVER invent)
-11. Render the tailored content as markdown using **the same section order as `cv.md`** (see below)
+11. Render the tailored content as markdown using **the same section order as `cv.md`** (see below). Enforce the visible-content range in `cv.constraints` from `config/profile.yml`; count rendered text, excluding Markdown and HTML syntax. Do not duplicate numeric limits in this mode.
 12. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase ("Jane Smith" → "jane-smith") → `{candidate}`
 13. Write to `output/cv-{candidate}-{company}-{YYYY-MM-DD}.md`
     *(Replace `{candidate}`, `{company}`, `{YYYY-MM-DD}` with actual values.)*

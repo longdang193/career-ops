@@ -62,6 +62,61 @@ test('Long Dang Markdown matches reference header and prose structure', () => {
   assert.match(markdown, /<br>\n\nSincerely,\n\*\*LONG DANG\*\*/);
 });
 
+test('reverse timeline template renders structured sections and experience branches', () => {
+  const template = fileURLToPath(new URL('../templates/cover-letter-template.reverse-timeline.md', import.meta.url));
+  const markdown = buildMarkdown({
+    candidate: {
+      name: 'Example Candidate',
+      subtitle: 'Analytics Candidate',
+      email: 'candidate@example.test',
+      phone: '+00 00000 000000',
+      linkedin: 'https://example.com/in/candidate',
+      github: 'https://github.com/example',
+    },
+    letter: {
+      role_title: 'Working Student Commercial Analytics',
+      company: 'Probe Analytics GmbH',
+      recipient_team: 'Company Recruitment Team',
+      greeting: 'Dear recruitment team,',
+      opening: 'I connect commercial questions with analytical decision support.',
+      profile_intro: 'My experience spans research, reporting, and process improvement.',
+      attention: {
+        title: 'This role connects commercial questions with analytical decision support.',
+        text: 'It brings data, market understanding, and business decisions together.',
+      },
+      challenge: {
+        title: 'How can scattered signals become timely action?',
+        text: 'The value lies in identifying what matters for the next decision.',
+      },
+      perspective: {
+        title: 'Useful analysis shortens the distance between evidence and action.',
+        text: 'That principle guides my work across research and analytics.',
+      },
+      experience: [
+        { title: 'Consumer Research', bullets: ['Combined consumer and market evidence.', 'Identified meaningful patterns.'] },
+        { title: 'Analytics', bullets: ['Worked with sales and campaign data.', 'Built structured decision support.'] },
+      ],
+      contribution: {
+        title: 'A perspective connecting context, evidence, and execution.',
+        bullets: ['Structure commercial questions.', 'Translate findings into concise outputs.'],
+      },
+      closing: 'I would welcome the opportunity to discuss my contribution further.',
+      signature: { valediction: 'Sincerely,' },
+    },
+  }, template);
+
+  assert.match(markdown, /<div class="reverse-letter">/);
+  assert.match(markdown, /<h2 class="tl-kicker">WHAT CAUGHT MY ATTENTION<\/h2>/);
+  assert.match(markdown, /<h2 class="tl-kicker">THE CHALLENGE<\/h2>/);
+  assert.match(markdown, /<h2 class="tl-kicker">MY PERSPECTIVE<\/h2>/);
+  assert.equal((markdown.match(/class="branch-node"/g) || []).length, 2);
+  assert.match(markdown, /<h3 class="branch-title">Consumer Research<\/h3>/);
+  assert.match(markdown, /<h2 class="tl-kicker">WHAT I WOULD CONTRIBUTE<\/h2>/);
+  assert.match(markdown, /<strong>Example Candidate<\/strong>/);
+  assert.doesNotMatch(markdown, /\*\*Example Candidate\*\*/);
+  assert.doesNotMatch(markdown, /\{\{[A-Z_]+\}\}/);
+});
+
 test('Markdown cover templates resolve and render through shared replacements', () => {
   const { dir, profile } = fixture();
   try {
