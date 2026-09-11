@@ -14,6 +14,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BATCH_DIR="$SCRIPT_DIR"
 INPUT_FILE="$BATCH_DIR/batch-input.tsv"
+JSONL_INPUT=""
+JSONL_MANIFEST=""
+JSONL_TMP_DIR=""
 STATE_FILE="$BATCH_DIR/batch-state.tsv"
 PROMPT_FILE="$BATCH_DIR/batch-prompt.md"
 PROFILE_FILE="$PROJECT_DIR/config/profile.yml"
@@ -60,6 +63,7 @@ Uses spend_tier from config/profile.yml unless --model overrides it.
 Usage: batch-runner.sh [OPTIONS]
 
 Options:
+  --jsonl PATH          Read captured job records and local JDs from JSONL
   --parallel N         Number of parallel workers (default: 1)
   --dry-run            Show what would be processed, don't execute
   --retry-failed       Only retry offers marked as "failed" in state
@@ -103,6 +107,11 @@ USAGE
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --jsonl)
+      [[ $# -ge 2 ]] || { echo "ERROR: --jsonl requires a path"; exit 1; }
+      JSONL_INPUT="$2"
+      shift 2
+      ;;
     --parallel) PARALLEL="$2"; shift 2 ;;
     --dry-run) DRY_RUN=true; shift ;;
     --retry-failed) RETRY_FAILED=true; shift ;;
@@ -125,6 +134,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$JSONL_INPUT" && ( "$STATUS_ONLY" == "true" || "$WATCH_MODE" == "true" ) ]]; then
+  echo "ERROR: --jsonl cannot be combined with --status or --watch."
+  exit 1
+fi
+
 if ! [[ "$RATE_LIMIT_SLEEP" =~ ^[0-9]+$ ]]; then
   echo "ERROR: --rate-limit-sleep must be a non-negative integer (seconds)."
   exit 1
@@ -139,6 +153,102 @@ if ! [[ "$LIMIT" =~ ^[0-9]+$ ]]; then
   echo "ERROR: --limit must be a non-negative integer."
   exit 1
 fi
+
+# Normalize captured JSONL into the existing worker input contract. The
+# normalized manifest and local JD files are temporary and removed on exit.
+prepare_jsonl_input() {
+  if [[ ! -f "$JSONL_INPUT" ]] && ! node -e "process.exit(require('fs').existsSync(process.argv[1]) ? 0 : 1)" "$JSONL_INPUT"; then
+    echo "ERROR: JSONL input not found: $JSONL_INPUT"
+    exit 1
+  fi
+
+  JSONL_TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/career-ops-jsonl.XXXXXX")"
+  JSONL_MANIFEST="$JSONL_TMP_DIR/input.tsv"
+
+  if ! node - "$JSONL_INPUT" "$JSONL_MANIFEST" "$JSONL_TMP_DIR" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const readline = require('readline');
+
+const [inputPath, manifestPath, tempDir] = process.argv.slice(2);
+const ids = new Set();
+const urls = new Set();
+const lines = ['id\turl\tsource\tnotes\tjd_file'];
+let lineNumber = 0;
+let recordCount = 0;
+
+const clean = value => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+const error = message => { throw new Error(`line ${lineNumber}: ${message}`); };
+
+const input = fs.createReadStream(inputPath, { encoding: 'utf8' });
+const reader = readline.createInterface({ input, crlfDelay: Infinity });
+
+(async () => {
+  for await (const rawLine of reader) {
+    lineNumber += 1;
+    if (!rawLine.trim()) continue;
+
+    let row;
+    try {
+      row = JSON.parse(rawLine);
+    } catch {
+      error('invalid JSON');
+    }
+
+    const job = row?.raw_job;
+    if (!job || typeof job !== 'object') error('missing raw_job object');
+
+    const url = clean(row.job_url) || clean(job.jobUrl);
+    if (!url) error('missing job_url or raw_job.jobUrl');
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) error('URL must use http or https');
+    } catch {
+      error(`invalid URL: ${url}`);
+    }
+
+    const id = clean(job.id) || String(lineNumber);
+    if (!/^\d+$/.test(id)) error(`raw_job.id must be numeric: ${id}`);
+    if (ids.has(id)) error(`duplicate ID: ${id}`);
+    if (urls.has(url)) error(`duplicate URL: ${url}`);
+    ids.add(id);
+    urls.add(url);
+
+    const description = typeof job.description === 'string' ? job.description : '';
+    let jdFile = '';
+    if (description.trim()) {
+      jdFile = path.join(tempDir, `${id}.txt`);
+      fs.writeFileSync(jdFile, description, { encoding: 'utf8', flag: 'wx' });
+    }
+
+    const source = clean(row.source) || (new URL(url).hostname.toLowerCase().includes('linkedin') ? 'LinkedIn' : 'JSONL');
+    const notes = [job.companyName, job.title, job.location].map(clean).filter(Boolean).join(' - ');
+    lines.push([id, url, source, notes, jdFile].map(clean).join('\t'));
+    recordCount += 1;
+  }
+
+  if (recordCount === 0) error('no records found');
+  fs.writeFileSync(manifestPath, `${lines.join('\n')}\n`, { encoding: 'utf8', flag: 'wx' });
+})().catch(error => {
+  console.error(`ERROR: JSONL input: ${error.message}`);
+  process.exitCode = 1;
+});
+NODE
+  then
+    cleanup_jsonl_input
+    exit 1
+  fi
+
+  INPUT_FILE="$JSONL_MANIFEST"
+}
+
+cleanup_jsonl_input() {
+  [[ -n "$JSONL_TMP_DIR" && -d "$JSONL_TMP_DIR" ]] || return 0
+  rm -f -- "$JSONL_TMP_DIR"/*.txt "$JSONL_MANIFEST"
+  rmdir -- "$JSONL_TMP_DIR" 2>/dev/null || true
+  JSONL_TMP_DIR=""
+  JSONL_MANIFEST=""
+}
 
 # Lock file to prevent double execution
 acquire_lock() {
@@ -162,6 +272,7 @@ release_lock() {
     return
   fi
   rm -f "$LOCK_FILE"
+  cleanup_jsonl_input
 }
 
 trap release_lock EXIT
@@ -724,7 +835,7 @@ reserve_report_num_retrying() {
 
 # Process a single offer
 process_offer() {
-  local id="$1" url="$2" source="$3" notes="$4"
+  local id="$1" url="$2" source="$3" notes="$4" captured_jd_file="${5:-}"
 
   local started_at
   started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -741,6 +852,11 @@ process_offer() {
   # could pre-create it as a symlink and redirect or clobber the write.
   local jd_file
   jd_file="$(mktemp "${TMPDIR:-/tmp}/batch-jd-${id}.XXXXXX")"
+
+  if [[ -n "$captured_jd_file" && -s "$captured_jd_file" ]]; then
+    cp -- "$captured_jd_file" "$jd_file"
+    echo "    JD source: captured JSONL"
+  fi
 
   # Pre-populate $jd_file with a static curl fetch so the worker reads HTML
   # directly instead of always falling through to WebFetch (#2492). WebFetch is
@@ -759,6 +875,9 @@ process_offer() {
   local prefetch_min_words=80
   local jd_prefetch_words=0
   if command -v curl >/dev/null 2>&1; then
+    if [[ -s "$jd_file" ]]; then
+      echo "    JD prefetch skipped: captured JSONL"
+    else
     # Reject loopback, link-local, and private-network destinations before curl
     # connects. --proto/--proto-redir restrict schemes but not destination IPs,
     # so a malicious offer URL could reach cloud metadata (169.254.169.254) or
@@ -855,6 +974,7 @@ process_offer() {
       else
         echo "    ℹ️  JD prefetch: ${jd_prefetch_words} words written to JD file"
       fi
+    fi
   fi
 
   echo "--- Processing offer #$id: $url (report $report_num, attempt $((retries + 1)))"
@@ -1271,6 +1391,10 @@ main() {
     exit 0
   fi
 
+  if [[ -n "$JSONL_INPUT" ]]; then
+    prepare_jsonl_input
+  fi
+
   check_prerequisites
 
   resolve_worker_model
@@ -1315,8 +1439,9 @@ main() {
   local -a pending_urls=()
   local -a pending_sources=()
   local -a pending_notes=()
+  local -a pending_jd_files=()
 
-  while IFS=$'\t' read -r id url source notes; do
+  while IFS=$'\t' read -r id url source notes jd_file; do
     [[ "$id" == "id" ]] && continue  # skip header
     [[ -z "$id" || -z "$url" ]] && continue
 
@@ -1375,6 +1500,7 @@ main() {
     pending_urls+=("$url")
     pending_sources+=("$source")
     pending_notes+=("$notes")
+    pending_jd_files+=("$jd_file")
   done < "$INPUT_FILE"
 
   local pending_count=${#pending_ids[@]}
@@ -1405,7 +1531,7 @@ main() {
   if (( PARALLEL <= 1 )); then
     # Sequential processing
     for i in "${!pending_ids[@]}"; do
-      process_offer "${pending_ids[$i]}" "${pending_urls[$i]}" "${pending_sources[$i]}" "${pending_notes[$i]}"
+      process_offer "${pending_ids[$i]}" "${pending_urls[$i]}" "${pending_sources[$i]}" "${pending_notes[$i]}" "${pending_jd_files[$i]}"
       if [[ "$BATCH_PAUSED" == "true" || -f "$PAUSE_FILE" ]]; then
         echo "=== Batch paused: session/rate limit reached. Resume later with --resume-paused. ==="
         break
@@ -1449,7 +1575,7 @@ main() {
       fi
 
       # Launch worker in background
-      process_offer "${pending_ids[$i]}" "${pending_urls[$i]}" "${pending_sources[$i]}" "${pending_notes[$i]}" &
+      process_offer "${pending_ids[$i]}" "${pending_urls[$i]}" "${pending_sources[$i]}" "${pending_notes[$i]}" "${pending_jd_files[$i]}" &
       pids+=($!)
       pid_ids+=("${pending_ids[$i]}")
       running=$((running + 1))

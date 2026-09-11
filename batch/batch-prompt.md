@@ -88,7 +88,8 @@ Run these steps in order.
 
 ### Step 1 — Load the JD
 
-1. Read `{{JD_FILE}}`.
+1. Read `{{JD_FILE}}`. When this file contains captured text from JSONL input,
+   treat it as the canonical JD and do not fetch `{{URL}}` again.
 2. If the file is empty or missing, try to fetch the JD from `{{URL}}` with WebFetch.
 3. If both fail, this is a hard stop — do ALL of the following, in this exact order, and nothing else:
    - Do **NOT** write a report file to `reports/`.

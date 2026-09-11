@@ -4,6 +4,20 @@ Process multiple job offers in parallel via headless workers. Each worker runs t
 
 ## Quick Start
 
+For captured job records, use JSONL directly. The runner reads
+`raw_job.description` and does not retrieve the JD from its URL:
+
+```bash
+./batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --dry-run
+./batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --parallel 1
+```
+
+`job_url` is the preferred URL field, with `raw_job.jobUrl` as fallback.
+`raw_job.companyName`, `raw_job.title`, and `raw_job.location` provide batch
+notes. `descriptionHtml` and `enriched_job` are ignored. If
+`raw_job.description` is empty, the runner keeps its existing URL-fetch
+fallback.
+
 1. **Add offers** to `batch-input.tsv` (tab-separated: `id`, `url`, `source`, `notes`):
 
    ```tsv
@@ -30,6 +44,7 @@ Process multiple job offers in parallel via headless workers. Each worker runs t
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `--jsonl PATH` | off | Read captured job records and local JDs from JSONL; skips URL retrieval when `raw_job.description` exists |
 | `--parallel N` | `1` | Number of concurrent headless workers |
 | `--dry-run` | off | Preview pending offers without processing |
 | `--retry-failed` | off | Only retry offers marked as `failed` in state |

@@ -99,7 +99,25 @@ node reserve-report-num.mjs --release 042-049
 batch/batch-runner.sh [OPTIONS]
 ```
 
+### Captured JSONL input
+
+Use `--jsonl PATH` when each record already contains a captured JD:
+
+```bash
+batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --dry-run
+batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --parallel 1
+```
+
+The runner uses `raw_job.description` as the canonical JD and passes it to the
+existing worker `JD_FILE` contract. It does not call `curl` or WebFetch for a
+non-empty captured description. URL resolution prefers `job_url`, then
+`raw_job.jobUrl`; missing descriptions retain the existing URL fallback.
+`descriptionHtml` and `enriched_job` are optional derived fields and are not
+used for evaluation. Temporary normalized input and JD files are removed when
+the run exits. Existing `batch-input.tsv` input remains supported.
+
 Options:
+- `--jsonl PATH` — read captured job records and local JDs from JSONL
 - `--dry-run` — list pending jobs without executing
 - `--retry-failed` — retry only failed jobs
 - `--resume-paused` — resume jobs paused after a Claude session/rate limit
