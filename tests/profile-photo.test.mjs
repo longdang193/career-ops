@@ -14,8 +14,8 @@ function payload(photo = '', photo_style = 'rounded') {
   return {
     lang: 'en', page_format: 'a4',
     candidate: { name: 'Test Candidate', email: 'test@example.com', photo, photo_style },
-    summary: 'Test summary', competencies: ['Testing'],
-    experience: [{ company: 'Test Co', role: 'Engineer', dates: '2026', bullets: ['Built tests.'] }],
+    summary: Array(440).fill('analysis').join(' '), competencies: ['Testing'],
+    experience: [{ company: 'Test Co', role: 'Engineer', dates: '2026', bullets: ['Built tests.', 'Documented test coverage.', 'Improved repeatability.'] }],
     projects: [], education: [{ title: 'BSc', org: 'Test University', year: '2025' }],
     certifications: [], skills: [{ category: 'Tools', items: ['Node.js'] }],
   };

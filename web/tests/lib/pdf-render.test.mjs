@@ -332,7 +332,7 @@ test("renderAndMarkPdf: render succeeds but mark-pdf-ready fails with no parseab
 test("writeCvHtml: writes the html verbatim", () => {
   // Given a tailored document with characters a re-encode would mangle
   const dir = makeScratchDir();
-  const html = '<!DOCTYPE html>\n<html><head><style>a>b{content:"<<"}</style></head><body>José — 5 &lt; 10</body></html>';
+  const html = '<!DOCTYPE html>\n<html><head><style>a>b{content:"<<"}</style></head><body>José — 5 &lt; 10 ' + 'word '.repeat(450) + '</body></html>';
   const paths = { html: join(dir, "cv-web-018.html"), finalPdf: join(dir, "out.pdf") };
   try {
     // When persisting the parsed envelope
@@ -343,6 +343,20 @@ test("writeCvHtml: writes the html verbatim", () => {
     assert.equal(result.ok, true);
     assert.equal(readFileSync(paths.html, "utf8"), html);
     assert.deepEqual(readdirSync(dir), ["cv-web-018.html"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("writeCvHtml: rejects a CV outside shared word limits before writing", () => {
+  const dir = makeScratchDir();
+  const paths = { html: join(dir, "cv-web-short.html"), finalPdf: join(dir, "out.pdf") };
+  try {
+    const result = writeCvHtml({ pdfPaths: paths, html: "<html><body>too short</body></html>" });
+
+    assert.equal(result.ok, false);
+    assert.match(result.error, /minimum is 450/);
+    assert.equal(readdirSync(dir).length, 0);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -463,8 +477,8 @@ test("writeCvHtml: a shorter re-render leaves no trailing bytes", () => {
   // of a previous run's CV.
   const dir = makeScratchDir();
   const paths = { html: join(dir, "cv-web-018.html"), finalPdf: join(dir, "out.pdf") };
-  const long = `<!DOCTYPE html><html><body>${"X".repeat(4000)}</body></html>`;
-  const short = "<!DOCTYPE html><html><body>short</body></html>";
+  const long = `<!DOCTYPE html><html><body>${"long ".repeat(500)}</body></html>`;
+  const short = `<!DOCTYPE html><html><body>${"short ".repeat(450)}</body></html>`;
   try {
     // When the long document is written and then the short one to the same path
     assert.equal(writeCvHtml({ pdfPaths: paths, html: long }).ok, true);
@@ -473,7 +487,7 @@ test("writeCvHtml: a shorter re-render leaves no trailing bytes", () => {
     // Then the file is exactly the short document, with nothing left over
     const onDisk = readFileSync(paths.html, "utf8");
     assert.equal(onDisk, short);
-    assert.ok(!onDisk.includes("XXXX"), "trailing bytes from the earlier write survived");
+    assert.ok(!onDisk.includes("long long long"), "trailing bytes from the earlier write survived");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

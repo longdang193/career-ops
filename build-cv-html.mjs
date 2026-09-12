@@ -33,6 +33,7 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -792,6 +793,12 @@ async function main() {
     process.exit(1);
   }
   for (const message of warnings) console.error(`Warning: ${message}`);
+  try {
+    validatePayloadLimits('cv', payload, loadDocumentRules());
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
 
   const template = await readFile(templatePath, 'utf-8');
 
@@ -803,6 +810,12 @@ async function main() {
     process.exit(1);
   }
 
+  try {
+    validateRenderedWordCount('cv', html, loadDocumentRules(), 'html');
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
   await writeAndReport(html, absOutput, payload, preview ? { status: 'preview-ready', warnings } : { warnings });
   process.exit(0);
 }

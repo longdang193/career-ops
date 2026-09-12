@@ -19,7 +19,8 @@ import { dirname, resolve, join, relative, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parseArgs } from "util";
 import { assertFacts } from "./verify-cv-facts.mjs";
-import { getTemplateContract, loadProfileConfig, resolveTemplate } from "./cv-templates.mjs";
+import { getTemplateContract, resolveTemplate } from "./cv-templates.mjs";
+import { countVisibleWords, loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from "./lib/document-rules.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -302,36 +303,31 @@ function validateTimelinePayload(source, letter) {
   if (!Array.isArray(letter.experience)) {
     throw new Error('Missing required field: letter.experience');
   }
+  for (const key of ['attention', 'challenge', 'perspective', 'contribution']) {
+    const block = normalizeTimelineBlock(letter[key]);
+    for (const field of ['title', 'text']) {
+      if (/[!?]\s+[a-z]|\.\s+[a-z]{3,}/.test(block[field])) {
+        throw new Error(`Invalid cover letter.${key}.${field}: sentence fragment after punctuation`);
+      }
+    }
+  }
 }
 
 function evidenceItems(letter = {}) {
   return Array.isArray(letter.experience) ? letter.experience : (letter.achievements || []);
 }
 
-function validateEvidenceCount(achievements, contract, hasEvidenceSlot = true) {
+function validateEvidenceCount(achievements, hasEvidenceSlot = true) {
   if (!hasEvidenceSlot) return;
   const count = achievements?.length || 0;
-  if (count < contract.evidenceMin || count > contract.evidenceMax) {
-    throw new Error(`Cover template requires ${contract.evidenceMin}-${contract.evidenceMax} evidence blocks; received ${count}`);
+  const rules = loadDocumentRules().coverLetter;
+  if (count < rules.minEvidenceClaims || count > rules.maxEvidenceClaims) {
+    throw new Error(`Cover letter requires ${rules.minEvidenceClaims}-${rules.maxEvidenceClaims} evidence blocks; received ${count}`);
   }
 }
 
 function coverLetterConstraints() {
-  const constraints = loadProfileConfig().cover_letter?.constraints || {};
-  return {
-    minWords: Number.isInteger(constraints.min_words) ? constraints.min_words : 0,
-    targetWords: Number.isInteger(constraints.target_words) ? constraints.target_words : 0,
-    maxWords: Number.isInteger(constraints.max_words) ? constraints.max_words : 0,
-    maxEvidenceClaims: Number.isInteger(constraints.max_evidence_claims) ? constraints.max_evidence_claims : 0,
-  };
-}
-
-function visibleWordCount(text) {
-  return String(text)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .length;
+  return loadDocumentRules().coverLetter;
 }
 
 function buildCoverBodyText(letter = {}) {
@@ -361,14 +357,17 @@ function buildCoverBodyText(letter = {}) {
 }
 
 export function validateCoverConstraints(bodyText, achievements = [], configured = coverLetterConstraints()) {
-  const words = visibleWordCount(bodyText);
-  if (configured.minWords && words < configured.minWords) {
+  const words = countVisibleWords(bodyText);
+  if (words < configured.minWords) {
     throw new Error(`Cover letter has ${words} body words; minimum is ${configured.minWords}`);
   }
-  if (configured.maxWords && words > configured.maxWords) {
+  if (words > configured.maxWords) {
     throw new Error(`Cover letter has ${words} body words; maximum is ${configured.maxWords}`);
   }
-  if (configured.maxEvidenceClaims && achievements.length > configured.maxEvidenceClaims) {
+  if (achievements.length < configured.minEvidenceClaims) {
+    throw new Error(`Cover letter has ${achievements.length} evidence claims; minimum is ${configured.minEvidenceClaims}`);
+  }
+  if (achievements.length > configured.maxEvidenceClaims) {
     throw new Error(`Cover letter has ${achievements.length} evidence claims; maximum is ${configured.maxEvidenceClaims}`);
   }
   return { words, targetWords: configured.targetWords };
@@ -496,9 +495,10 @@ export function buildHtml(payload, templatePath) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
   const contract = getTemplateContract(resolvedPath);
   const source = readFileSync(resolvedPath, "utf-8");
+  validatePayloadLimits('cover_letter', payload, loadDocumentRules());
   validateTimelinePayload(source, payload.letter);
   const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
-  validateEvidenceCount(evidenceItems(payload.letter), contract, hasEvidenceSlot || source.includes('{{RELEVANT_EXPERIENCE_BLOCK}}'));
+  validateEvidenceCount(evidenceItems(payload.letter), hasEvidenceSlot || source.includes('{{RELEVANT_EXPERIENCE_BLOCK}}'));
   return renderTemplate(source, buildReplacements(payload));
 }
 
@@ -506,6 +506,7 @@ export function buildMarkdown(payload, templatePath) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
   const source = readFileSync(resolvedPath, "utf-8");
   const contract = getTemplateContract(resolvedPath);
+  validatePayloadLimits('cover_letter', payload, loadDocumentRules());
   validateTimelinePayload(source, payload.letter);
   const evidenceToken = contract.evidenceStyle === 'prose'
     ? '{{ACHIEVEMENTS_PROSE_BLOCK}}'
@@ -517,7 +518,7 @@ export function buildMarkdown(payload, templatePath) {
   if (hasEvidenceSlot && !source.includes(selectedEvidenceToken)) {
     throw new Error(`Cover template evidence_style=${contract.evidenceStyle} requires ${selectedEvidenceToken}`);
   }
-  validateEvidenceCount(evidenceItems(payload.letter), contract, hasEvidenceSlot);
+  validateEvidenceCount(evidenceItems(payload.letter), hasEvidenceSlot);
   const replacements = buildReplacements(payload);
   replacements["{{GREETING_BLOCK}}"] = escapeHtml(payload.letter.greeting || "");
   replacements["{{ACHIEVEMENTS_BLOCK}}"] = buildMarkdownAchievementsBlock(payload.letter.achievements);
@@ -586,8 +587,9 @@ Usage:
   if (!existsSync(OUTPUT_ROOT)) mkdirSync(OUTPUT_ROOT, { recursive: true });
 
   try {
+    const rules = loadDocumentRules();
     const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
-    if (markdown) validateCoverConstraints(buildCoverBodyText(payload.letter), evidenceItems(payload.letter));
+    validateRenderedWordCount("cover_letter", artifact, rules, markdown ? "md" : "html");
     // Cover letters are candidate-facing documents too. Reuse the CV fact
     // validator before importing Playwright or writing a PDF so a failed gate
     // cannot leave behind a misleading artifact.

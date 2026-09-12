@@ -204,10 +204,10 @@ Wait for all four answers before proceeding to Step 7.
 
 ## Step 7 — Achievement selection (from cv.md only)
 
-Select 4-5 achievement bullets from `cv.md` only (`article-digest.md` may be read for context but is not a source of achievement bullets):
+Select evidence items from `cv.md` only within `cover_letter.constraints.min_evidence_claims` and `cover_letter.constraints.max_evidence_claims` (`article-digest.md` may be read for context but is not a source of achievement bullets):
 1. Read all bullet points across all roles in cv.md
 2. Score each against the JD's top 3-4 required competencies
-3. Pick the 4-5 highest-scoring, with at least one metric per bullet
+3. Pick the highest-scoring items within the configured range, with at least one metric per bullet
 4. Use the exact wording and metrics from cv.md — never paraphrase or invent
 5. Apply keyword mirroring from Step 4 to the vocabulary around each bullet (not the metrics)
 
@@ -275,7 +275,7 @@ contracts, plus the bans that are stricter than the shared list.
 5. **No filler openers** — never "I am pleased to", "I am writing to express", "I am excited to"
 6. **Concrete over abstract** — every claim needs a number, system name, or specific outcome. "Improved performance" is banned. "Cut latency from 2s to 380ms" is fine.
 7. **Word budget** — read `cover_letter.constraints` from `config/profile.yml` and enforce its configured `min_words`/`max_words`; do not duplicate numeric limits in this mode.
-8. **Evidence format** — use `evidence_min`, `evidence_max`, and `evidence_style` from the selected template contract. Every block uses action + evidence + outcome. No em dash between lead and sentence.
+8. **Evidence format** — use `cover_letter.constraints.min_evidence_claims` and `cover_letter.constraints.max_evidence_claims` from `config/profile.yml`; use `evidence_style` from the selected template contract for presentation. Every block uses action + evidence + outcome. No em dash between lead and sentence.
 9. **Self-check** — before finalising, re-read each sentence: could it appear in any cover letter for any company? If yes, rewrite it.
 10. **Tone consistency** — apply the chosen tone (Step 6D) uniformly. Don't shift register mid-letter.
 
@@ -364,7 +364,7 @@ Templates with `evidence_slot: experience` use one shared reverse-timeline shape
 }
 ```
 
-Keep `experience` within the selected template contract; the reverse-timeline template permits two to four branches. Use one evidence source, not duplicate `achievements` and `experience` claims.
+Keep `experience` within `cover_letter.constraints.min_evidence_claims` and `cover_letter.constraints.max_evidence_claims`. Use one evidence source, not duplicate `achievements` and `experience` claims.
 
 Write payload to `/tmp/cover-payload-{company-slug}.json`.
 

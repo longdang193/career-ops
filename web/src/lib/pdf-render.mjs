@@ -15,6 +15,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { loadDocumentRules, validateRenderedWordCount } from "../../../lib/document-rules.mjs";
 
 /**
  * @typedef {Object} PdfRunSignals
@@ -78,6 +79,7 @@ export function pdfRunOutcome({ envelope, noOutputMessage, sawError, cleanExit, 
  */
 export function writeCvHtml({ pdfPaths, html }) {
   try {
+    validateRenderedWordCount("cv", html, loadDocumentRules(), "html");
     fs.writeFileSync(pdfPaths.html, html, "utf8");
     return { ok: true };
   } catch (err) {

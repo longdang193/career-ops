@@ -81,29 +81,20 @@ export function parseMeta(path) {
   return meta;
 }
 
-const DEFAULT_COVER_CONTRACT = Object.freeze({
-  evidenceMin: 0,
-  evidenceMax: 4,
-  evidenceStyle: 'bullets',
-});
-
 export function getTemplateContract(path, kind = 'cover') {
   if (kind !== 'cover') return {};
   const meta = parseMeta(path);
-  const evidenceMin = meta.evidence_min == null ? DEFAULT_COVER_CONTRACT.evidenceMin : Number(meta.evidence_min);
-  const evidenceMax = meta.evidence_max == null ? DEFAULT_COVER_CONTRACT.evidenceMax : Number(meta.evidence_max);
-  const evidenceStyle = meta.evidence_style || DEFAULT_COVER_CONTRACT.evidenceStyle;
-  if (!Number.isInteger(evidenceMin) || evidenceMin < 0) {
-    throw new Error(`Invalid cover template evidence_min: ${meta.evidence_min}`);
-  }
-  if (!Number.isInteger(evidenceMax) || evidenceMax < evidenceMin) {
-    throw new Error(`Invalid cover template evidence_max: ${meta.evidence_max}`);
-  }
+  const evidenceStyle = meta.evidence_style || 'bullets';
   if (!['bullets', 'prose'].includes(evidenceStyle)) {
     throw new Error(`Invalid cover template evidence_style: ${evidenceStyle}`);
   }
-  const contract = { evidenceMin, evidenceMax, evidenceStyle };
-  if (meta.evidence_slot) contract.evidenceSlot = meta.evidence_slot;
+  const contract = { evidenceStyle };
+  if (meta.evidence_slot) {
+    if (!['experience', 'achievements'].includes(meta.evidence_slot)) {
+      throw new Error(`Invalid cover template evidence_slot: ${meta.evidence_slot}`);
+    }
+    contract.evidenceSlot = meta.evidence_slot;
+  }
   return contract;
 }
 

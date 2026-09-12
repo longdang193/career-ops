@@ -1,8 +1,6 @@
 <!-- career-ops-template
 name: Long Dang Markdown Cover Letter
 version: 1.0.0
-evidence_min: 2
-evidence_max: 3
 evidence_style: prose
 -->
 

@@ -19,9 +19,9 @@ const BASE = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Edu Location', email: 'edu@example.com' },
-  summary: 'Summary.',
+  summary: Array(440).fill('analysis').join(' '),
   competencies: ['Competency'],
-  experience: [{ company: 'Corp', role: 'Engineer', dates: '2024', bullets: ['Did a thing'] }],
+  experience: [{ company: 'Corp', role: 'Engineer', dates: '2024', bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   education: [
     { title: 'B.S. Computer Science', org: 'State University', location: 'Berkeley, CA', year: '2020' },
     { title: 'M.S. Computer Science', org: 'Other University', year: '2022' },

@@ -22,6 +22,10 @@ System-layer template files used by career-ops scripts and modes. These files ar
 
 | `jurisdiction-prohibited-content.yml` | `modes/oferta.md` (Block G signal 10), `modes/apply.md` (Step 5c) | Jurisdiction-keyed table of content employers are legally prohibited from requiring/asking for (e.g. "Canadian experience" in Ontario postings, salary-history questions in California). Prompt-level data reference, agent-judged matching — no script reads it. Contribution rule: no entry without a citable legal source and effective date. |
 
+## Document Rule Ownership
+
+`config/profile.yml` is the single source of truth for generated-document limits. `lib/document-rules.mjs` validates and exposes those limits to every CV and cover-letter renderer. Templates own presentation structure and metadata only; they must not define numeric word, evidence, project, certification, or bullet limits.
+
 ### cv-template.html
 
 The HTML template rendered by Playwright into PDF. Uses placeholder tokens (`{{NAME}}`, `{{SUMMARY_TEXT}}`, `{{EXPERIENCE}}`, etc.) that the PDF pipeline fills at generation time.

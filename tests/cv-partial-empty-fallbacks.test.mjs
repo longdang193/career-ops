@@ -23,9 +23,9 @@ const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Mixed Rows', email: 'mixed@example.com' },
-  summary: 'Summary.',
+  summary: Array(440).fill('analysis').join(' '),
   competencies: ['Competency'],
-  experience: [{ company: 'Corp', role: 'Engineer', dates: '2024 - Present', bullets: ['Did a thing'] }],
+  experience: [{ company: 'Corp', role: 'Engineer', dates: '2024 - Present', bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   certifications: [
     { title: 'Cert both', org: 'Issuer', year: '2024' },
     { title: 'Cert no org', year: '2023' },

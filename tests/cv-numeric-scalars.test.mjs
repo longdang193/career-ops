@@ -20,9 +20,9 @@ const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Numeric Scalars', email: 'num@example.com' },
-  summary: 'Summary.',
+  summary: Array(440).fill('analysis').join(' '),
   competencies: ['Competency'],
-  experience: [{ company: 'Corp', role: 'Engineer', dates: 2024, bullets: ['Did a thing'] }],
+  experience: [{ company: 'Corp', role: 'Engineer', dates: 2024, bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   education: [{ title: 'BSc Computing', year: 2019 }],
   certifications: [{ title: 'AWS SAA', year: 2025 }],
 };

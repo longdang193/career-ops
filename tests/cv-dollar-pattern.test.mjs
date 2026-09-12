@@ -44,10 +44,11 @@ test("build-cv-latex: a $' in a bullet does not splice the template", () => {
     email: { url: 't@example.com', display: 't@example.com' },
     linkedin: { url: '', display: '' },
     github: { url: '', display: '' },
+    summary: Array(440).fill('analysis').join(' '),
     education: [], projects: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',
-      bullets: ["Reported budget lines in $'000 format for quarterly reviews"],
+      bullets: ["Reported budget lines in $'000 format for quarterly reviews", 'Documented the reporting workflow.', 'Improved review consistency.'],
     }],
   }));
 
@@ -68,12 +69,12 @@ test('build-cv-html: a $& in a bullet does not re-insert the placeholder', () =>
     lang: 'en',
     page_format: 'letter',
     candidate: { name: 'Test Candidate', email: 't@example.com' },
-    summary: 'Backend engineer.',
+    summary: Array(440).fill('analysis').join(' '),
     competencies: ['Cloud'],
     projects: [], education: [], certifications: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', dates: '2024',
-      bullets: ['Delivered cost savings of $&500K across the org'],
+      bullets: ['Delivered cost savings of $&500K across the org', 'Documented the cost review process.', 'Improved reporting consistency.'],
     }],
   }));
 
@@ -95,11 +96,12 @@ test('build-cv-latex: $` and $$ in a bullet survive verbatim', () => {
     email: { url: 't@example.com', display: 't@example.com' },
     linkedin: { url: '', display: '' },
     github: { url: '', display: '' },
+    summary: Array(440).fill('analysis').join(' '),
     education: [], projects: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',
       // $` = text before the match; $$ = a literal single $.
-      bullets: ['Cut spend from $$4M using the $`legacy pipeline'],
+      bullets: ['Cut spend from $$4M using the $`legacy pipeline', 'Documented the migration checks.', 'Improved release repeatability.'],
     }],
   }));
 

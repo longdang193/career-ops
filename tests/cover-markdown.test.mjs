@@ -117,6 +117,33 @@ test('reverse timeline template renders structured sections and experience branc
   assert.doesNotMatch(markdown, /\{\{[A-Z_]+\}\}/);
 });
 
+test('reverse timeline rejects sentence fragments in timeline copy', () => {
+  const template = fileURLToPath(new URL('../templates/cover-letter-template.reverse-timeline.md', import.meta.url));
+  const payload = {
+    candidate: { name: 'Example Candidate', subtitle: 'Analytics Candidate' },
+    letter: {
+      role_title: 'Analyst',
+      company: 'Acme GmbH',
+      opening: 'I improve reporting quality.',
+      profile_intro: 'I bring analytics experience.',
+      attention: {
+        title: 'This role connects analysis with process improvement. requires reliable evidence.',
+        text: 'I value clear inputs and disciplined follow-through.',
+      },
+      challenge: { title: 'How can analysis become useful action?', text: 'By checking data and documenting decisions.' },
+      perspective: { title: 'Evidence should guide action.', text: 'That principle guides my work.' },
+      experience: [
+        { title: 'Analytics', bullets: ['Built reports.', 'Checked inputs.'] },
+        { title: 'Research', bullets: ['Compared evidence.', 'Communicated findings.'] },
+      ],
+      contribution: { title: 'Clear and careful execution.', bullets: ['Document work.', 'Raise issues early.'] },
+      closing: 'I would welcome the opportunity to discuss my contribution further.',
+    },
+  };
+
+  assert.throws(() => buildMarkdown(payload, template), /sentence fragment/);
+});
+
 test('Markdown cover templates resolve and render through shared replacements', () => {
   const { dir, profile } = fixture();
   try {
@@ -132,7 +159,10 @@ test('Markdown cover templates resolve and render through shared replacements', 
         opening: 'I improve reporting quality.',
         profile_intro: 'Five years of analytics work.',
         problems_section: 'I would help turn operational data into clear decisions.',
-        achievements: [{ lead: 'Reporting', impact: 'improved decision speed.' }],
+        achievements: [
+          { lead: 'Reporting', impact: 'improved decision speed.' },
+          { lead: 'Controls', impact: 'reduced avoidable errors.' },
+        ],
         signature: { valediction: 'Sincerely,' },
       },
     }, join(dir, 'cover-letter-template.md'));
@@ -168,13 +198,16 @@ evidence_style: bullets
       company: 'Acme GmbH',
       opening: 'I improve reporting quality.',
       profile_intro: 'I bring analytics experience.',
-      achievements: [{ lead: 'Reporting', impact: 'improved decision speed.' }],
+        achievements: [
+          { lead: 'Reporting', impact: 'improved decision speed.' },
+          { lead: 'Controls', impact: 'reduced avoidable errors.' },
+        ],
       signature: { valediction: 'Sincerely,' },
     },
   };
   assert.match(buildMarkdown(payload, template), /- \*\*Reporting,\*\* improved decision speed\./);
-  assert.throws(() => buildMarkdown({ ...payload, letter: { ...payload.letter, achievements: [] } }, template), /requires 1-2 evidence blocks/);
-  assert.throws(() => buildMarkdown({ ...payload, letter: { ...payload.letter, achievements: [payload.letter.achievements[0], payload.letter.achievements[0], payload.letter.achievements[0]] } }, template), /requires 1-2 evidence blocks/);
+  assert.throws(() => buildMarkdown({ ...payload, letter: { ...payload.letter, achievements: [] } }, template), /requires 2-4 evidence blocks/);
+  assert.throws(() => buildMarkdown({ ...payload, letter: { ...payload.letter, achievements: Array(5).fill(payload.letter.achievements[0]) } }, template), /requires 2-4 evidence blocks/);
   rmSync(dir, { recursive: true, force: true });
 });
 

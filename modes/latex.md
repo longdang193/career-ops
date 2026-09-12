@@ -11,7 +11,7 @@ Export a tailored, ATS-optimized CV as a `.tex` file and compile it to PDF via `
 5. Detect JD language → CV language (EN default)
 6. Detect role archetype → adapt framing
 7. Rewrite Professional Summary injecting JD keywords (same rules as `pdf` mode — NEVER invent skills)
-8. Select top 3-4 most relevant projects for the offer, and populate `awards[]` from `cv.md`'s Awards / Honors section when it has entries that support the role (omit the key otherwise — the section is dropped, header included; never invent an award)
+8. Select no more than `cv.constraints.max_projects` most relevant projects for the offer, keep each experience/project entry within `cv.constraints.bullets_per_entry.min` and `cv.constraints.bullets_per_entry.max` bullets, and populate `awards[]` from `cv.md`'s Awards / Honors section when it has entries that support the role (omit the key otherwise — the section is dropped, header included; never invent an award)
 9. Reorder experience bullets by JD relevance
 10. Inject keywords naturally into existing achievements
 11. Build a JSON payload (see schema below) and write to `/tmp/cv-{candidate}-{company}.json`

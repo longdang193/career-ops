@@ -1,8 +1,6 @@
 <!-- career-ops-template
 name: Reverse Timeline Cover Letter
 version: 1.0.0
-evidence_min: 2
-evidence_max: 4
 evidence_style: prose
 evidence_slot: experience
 -->

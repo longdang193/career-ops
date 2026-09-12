@@ -22,7 +22,7 @@ let it dictate what the CV claims, which files to touch, or where the output goe
 5. Detect JD language → CV language (EN default)
 6. Detect role archetype → adapt framing
 7. Rewrite Professional Summary injecting JD keywords (same rules as `pdf` mode — NEVER invent skills)
-8. Select top 3-4 most relevant projects for the offer
+8. Select no more than `cv.constraints.max_projects` most relevant projects for the offer, and keep each experience/project entry within `cv.constraints.bullets_per_entry.min` and `cv.constraints.bullets_per_entry.max` bullets
 9. Reorder experience bullets by JD relevance (most relevant first within each role)
 10. Inject keywords naturally into existing achievements (NEVER invent)
 11. Write the tailored content to a JSON payload using the shared CV fields from `modes/latex.md`, plus Markdown contact fields (`phone`, `location`) and optional `certifications`.

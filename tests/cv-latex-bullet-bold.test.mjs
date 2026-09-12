@@ -22,7 +22,7 @@ const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Bold Bullets', email: 'bold@example.com' },
-  summary: 'Summary.',
+  summary: Array(430).fill('analysis').join(' '),
   competencies: ['Competency'],
   experience: [{
     company: 'Corp',
@@ -47,7 +47,7 @@ const PAYLOAD = {
     name: '**BoldName**',
     context: '**BoldContext**',
     dates: '2024',
-    bullets: ['Built a REST API with **test coverage exceeding 90%**'],
+    bullets: ['Built a REST API with **test coverage exceeding 90%**', 'Documented API behavior for maintainers.', 'Added repeatable validation checks.'],
   }],
   // Coursework carries no `bullets` key but renders inside a \resumeItem, so it
   // goes through the same gate — the output shape decides, not the field name.

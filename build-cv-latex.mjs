@@ -9,6 +9,7 @@ import { escapeLatex, sanitizeUrl } from './lib/latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { hasRequiredFields, hasText, validatePayload } from './lib/cv-payload-schema.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -191,6 +192,12 @@ async function main() {
     process.exit(1);
   }
   for (const message of warnings) console.error(`Warning: ${message}`);
+  try {
+    validatePayloadLimits('cv', payload, loadDocumentRules());
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
 
   // Honor a selected .tex template variant (cv.template default or --template=<name>),
   // falling back to the base cv-template.tex when no variant exists.
@@ -256,6 +263,12 @@ async function main() {
     mkdirSync(outDir, { recursive: true });
   }
 
+  try {
+    validateRenderedWordCount('cv', template, loadDocumentRules(), 'tex');
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
   await writeFile(absOutput, template, 'utf-8');
 
   const fileInfo = await stat(absOutput);

@@ -23,12 +23,12 @@ const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Numeric Scalars', email: 'num@example.com' },
-  summary: 'Summary.',
+  summary: Array(440).fill('analysis').join(' '),
   competencies: ['Competency'],
-  experience: [{ company: 'Corp', role: 'Engineer', dates: 2024, bullets: ['Did a thing'] }],
+  experience: [{ company: 'Corp', role: 'Engineer', dates: 2024, bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   education: [{ institution: 'Uni', degree: 'BSc Computing', dates: 2019 }],
   awards: [{ title: 'Prize', year: 2025 }],
-  projects: [{ name: 'Proj', dates: 2023, bullets: ['Built a thing'] }],
+  projects: [{ name: 'Proj', dates: 2023, bullets: ['Built a thing', 'Added validation checks.', 'Documented the result.'] }],
 };
 
 const dir = mkdtempSync(join(tmpdir(), 'cv-latex-numeric-'));

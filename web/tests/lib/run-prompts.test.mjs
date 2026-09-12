@@ -71,6 +71,13 @@ test("buildPrompt: the pdf prompt still pins tailoring to the real mode", () => 
   assert.match(prompt, /reports\/018-\*\.md/);
 });
 
+test("buildPrompt: the pdf prompt delegates project count to profile constraints", () => {
+  const prompt = buildPrompt({ kind: "pdf", ...ARGS });
+
+  assert.match(prompt, /cv\.constraints\.max_projects/);
+  assert.doesNotMatch(prompt, /top 3[–-]4 projects/);
+});
+
 test("buildPrompt: every kind ends with exactly one VERDICT instruction", () => {
   // Given each kind — job-store.tsx parses that final line client-side
   for (const kind of ["pdf", "research", "evaluate", "fix-portal"]) {

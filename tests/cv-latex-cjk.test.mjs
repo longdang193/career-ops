@@ -29,6 +29,7 @@ const PAYLOAD = {
   email: { url: 'test@example.com', display: 'test@example.com' },
   linkedin: { url: 'https://linkedin.com/in/test', display: 'linkedin.com/in/test' },
   github: { url: 'https://github.com/test', display: 'github.com/test' },
+  summary: Array(430).fill('analysis').join(' '),
   education: [{
     institution: '示例大学 (Sample University)',
     location: 'Toronto, ON',
@@ -41,13 +42,13 @@ const PAYLOAD = {
     role: '软件工程师',
     location: 'Remote',
     dates: '2022 - Present',
-    bullets: ['设计并交付了多个内部工具，提升团队效率 20%'],
+    bullets: ['设计并交付了多个内部工具，提升团队效率 20%', '记录发布检查并支持团队复用。', '改进流程可追踪性和交付稳定性。'],
   }],
   projects: [{
     name: '示例项目',
     context: 'React, Node.js',
     dates: '2024',
-    bullets: ['构建了一个交互式数据分析平台'],
+    bullets: ['构建了一个交互式数据分析平台', '增加数据检查和使用文档。', '改进分析流程的可重复性。'],
   }],
   awards: [{ title: '优秀毕业生奖', org: '示例大学', year: '2024' }],
   skills: [{ category: '语言', items: '中文，英语' }],

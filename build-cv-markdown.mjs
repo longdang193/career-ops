@@ -5,6 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
 import { resolveTemplate, validateTemplate } from './cv-templates.mjs';
 import { isMainModule } from './lib/is-main-module.mjs';
 
@@ -134,6 +135,7 @@ export function buildMarkdown(payload, templatePath) {
   const { errors, warnings } = validatePayload(payload, 'md');
   if (errors.length) throw new Error(`Invalid CV payload: ${errors.join('; ')}`);
   if (warnings.length) throw new Error(`CV payload cannot be rendered safely: ${warnings.join('; ')}`);
+  validatePayloadLimits('cv', payload, loadDocumentRules());
   return renderTemplate(readFileSync(path, 'utf8'), {
     '{{NAME}}': markdownText(payload.name),
     '{{CONTACT_BLOCK}}': buildContact(payload),
@@ -166,6 +168,7 @@ function main() {
   const markdown = buildMarkdown(JSON.parse(readFileSync(input, 'utf8')), values.template
     ? resolveTemplate('cv', values.template, { format: 'md' })
     : undefined);
+  validateRenderedWordCount('cv', markdown, loadDocumentRules(), 'md');
   writeFileSync(output, markdown, 'utf8');
   console.log(`CV Markdown: ${output}`);
 }
