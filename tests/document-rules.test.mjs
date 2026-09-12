@@ -16,8 +16,8 @@ import {
 const PROFILE = {
   cv: {
     constraints: {
-      min_words: 450,
-      max_words: 600,
+      min_words: 530,
+      max_words: 630,
       max_projects: 3,
       max_certifications: 5,
       bullets_per_entry: { min: 3, max: 4 },
@@ -38,8 +38,8 @@ const PROFILE = {
 test('validateDocumentRules returns one normalized CV and cover policy', () => {
   assert.deepEqual(validateDocumentRules(PROFILE), {
     cv: {
-      minWords: 450,
-      maxWords: 600,
+      minWords: 530,
+      maxWords: 630,
       maxProjects: 3,
       maxCertifications: 5,
       bulletsPerEntry: { min: 3, max: 4 },
@@ -61,8 +61,8 @@ test('loadDocumentRules reads the existing profile file', () => {
   writeFileSync(path, [
     'cv:',
     '  constraints:',
-    '    min_words: 450',
-    '    max_words: 600',
+    '    min_words: 530',
+    '    max_words: 630',
     '    max_projects: 3',
     '    max_certifications: 5',
     '    bullets_per_entry:',
@@ -84,6 +84,14 @@ test('loadDocumentRules reads the existing profile file', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('active profile uses requested CV and cover word ranges', () => {
+  const rules = loadDocumentRules();
+  assert.deepEqual(rules.cv.minWords, 530);
+  assert.deepEqual(rules.cv.maxWords, 630);
+  assert.deepEqual(rules.coverLetter.minWords, 250);
+  assert.deepEqual(rules.coverLetter.maxWords, 350);
 });
 
 test('profile example carries complete document policy including shared audit settings', () => {
@@ -178,7 +186,7 @@ test('visible word validation strips document markup and enforces configured ran
   assert.equal(countVisibleWords('\\href{https://example.test/a-long-url}{Visible label}'), 2);
   assert.equal(countVisibleWords('\\documentclass{article}% hidden preamble\n\\begin{document}one two\\end{document}', 'tex'), 2);
   const rules = validateDocumentRules(PROFILE);
-  assert.doesNotThrow(() => validateRenderedWordCount('cv', '<p>' + 'word '.repeat(450) + '</p>', rules));
-  assert.throws(() => validateRenderedWordCount('cv', 'word '.repeat(601), rules), /maximum is 600/);
+  assert.doesNotThrow(() => validateRenderedWordCount('cv', '<p>' + 'word '.repeat(530) + '</p>', rules));
+  assert.throws(() => validateRenderedWordCount('cv', 'word '.repeat(631), rules), /maximum is 630/);
   assert.throws(() => validateRenderedWordCount('cover_letter', 'word '.repeat(249), rules), /minimum is 250/);
 });

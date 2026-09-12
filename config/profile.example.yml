@@ -132,8 +132,8 @@ cv:
   # Visible-content word range for tailored CVs. Count rendered text, not
   # Markdown or HTML syntax.
   constraints:
-    min_words: 450
-    max_words: 600
+    min_words: 530
+    max_words: 630
     max_projects: 3
     max_certifications: 5
     bullets_per_entry:
