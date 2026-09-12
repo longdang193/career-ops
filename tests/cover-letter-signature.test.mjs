@@ -23,6 +23,10 @@ const basePayload = {
     role_title: 'Head of Applied AI',
     opening: 'CLOSING_MARKER opening sentence.',
     profile_intro: 'Profile intro.',
+    achievements: [
+      { lead: 'Delivery', impact: 'Improved execution.' },
+      { lead: 'Quality', impact: 'Strengthened review.' },
+    ],
   },
 };
 

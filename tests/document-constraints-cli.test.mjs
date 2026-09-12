@@ -60,6 +60,41 @@ test('CV HTML and LaTeX reject invalid cardinality before writing', () => {
   }
 });
 
+test('CV LaTeX requires tailoring metadata when tailored mode is explicit', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'document-tailoring-cli-'));
+  try {
+    const input = join(dir, 'cv-latex.json');
+    const output = join(dir, 'cv.tex');
+    writeFileSync(input, JSON.stringify({
+      name: 'Test Candidate',
+      contact_line: 'City',
+      email: { url: 'test@example.com', display: 'test@example.com' },
+      summary: Array(500).fill('analysis').join(' '),
+      education: [],
+      experience: [{
+        company: 'Example Corp',
+        role: 'Analyst',
+        location: 'City',
+        dates: '2024',
+        bullets: [
+          Array(160).fill('analysis').join(' '),
+          Array(160).fill('reporting').join(' '),
+          Array(160).fill('validation').join(' '),
+        ],
+      }],
+      projects: [],
+      awards: [],
+      skills: [],
+    }));
+    const result = run('build-cv-latex.mjs', [input, output, '--tailored']);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /tailoring: required/);
+    assert.equal(existsSync(output), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('cover PDF rejects evidence drift before writing', () => {
   const payloadPath = join(tmpdir(), 'cover-constraints-invalid.json');
   const outputPath = join('output', `cover-constraints-invalid-${process.pid}.pdf`);

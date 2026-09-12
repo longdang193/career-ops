@@ -344,6 +344,10 @@ Assemble the JSON payload:
     "closing": "{approved closing}",
     "language_closing": "{approved language sentence or null}"
   },
+  "tailoring": {
+    "jd_keywords": ["{keyword used in the letter}"],
+    "selected_evidence_titles": ["{evidence title or achievement lead in rendered order}"]
+  },
   "output_path": "output/{company-slug}-{role-slug}-cover.md"
 }
 ```
@@ -370,7 +374,7 @@ Write payload to `/tmp/cover-payload-{company-slug}.json`.
 
 Run:
 ```bash
-node generate-cover-letter.mjs --payload /tmp/cover-payload-{company-slug}.json --markdown
+node generate-cover-letter.mjs --payload /tmp/cover-payload-{company-slug}.json --markdown --tailored
 ```
 
 Report the output path and file size.

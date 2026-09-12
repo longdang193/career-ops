@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const tmp = () => mkdtempSync(join(tmpdir(), 'cv-dollar-'));
+const longBullet = (text) => `${text} ${Array(160).fill('analysis').join(' ')}`;
 
 const run = (script, payload, out) =>
   execFileSync(process.execPath, [join(ROOT, script), payload, out], {
@@ -48,7 +49,11 @@ test("build-cv-latex: a $' in a bullet does not splice the template", () => {
     education: [], projects: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',
-      bullets: ["Reported budget lines in $'000 format for quarterly reviews", 'Documented the reporting workflow.', 'Improved review consistency.'],
+      bullets: [
+        longBullet("Reported budget lines in $'000 format for quarterly reviews"),
+        longBullet('Documented the reporting workflow.'),
+        longBullet('Improved review consistency.'),
+      ],
     }],
   }));
 
@@ -101,7 +106,11 @@ test('build-cv-latex: $` and $$ in a bullet survive verbatim', () => {
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',
       // $` = text before the match; $$ = a literal single $.
-      bullets: ['Cut spend from $$4M using the $`legacy pipeline', 'Documented the migration checks.', 'Improved release repeatability.'],
+      bullets: [
+        longBullet('Cut spend from $$4M using the $`legacy pipeline'),
+        longBullet('Documented the migration checks.'),
+        longBullet('Improved release repeatability.'),
+      ],
     }],
   }));
 

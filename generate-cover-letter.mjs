@@ -20,7 +20,7 @@ import { fileURLToPath } from "url";
 import { parseArgs } from "util";
 import { assertFacts } from "./verify-cv-facts.mjs";
 import { getTemplateContract, resolveTemplate } from "./cv-templates.mjs";
-import { countVisibleWords, loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from "./lib/document-rules.mjs";
+import { countVisibleWords, loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from "./lib/document-rules.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -491,7 +491,7 @@ function renderTemplate(source, replacements) {
   return rendered;
 }
 
-export function buildHtml(payload, templatePath) {
+export function buildHtml(payload, templatePath, { requireTailoring = false } = {}) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload);
   const contract = getTemplateContract(resolvedPath);
   const source = readFileSync(resolvedPath, "utf-8");
@@ -499,10 +499,12 @@ export function buildHtml(payload, templatePath) {
   validateTimelinePayload(source, payload.letter);
   const hasEvidenceSlot = source.includes('{{ACHIEVEMENTS_BLOCK}}') || source.includes('{{ACHIEVEMENTS_PROSE_BLOCK}}');
   validateEvidenceCount(evidenceItems(payload.letter), hasEvidenceSlot || source.includes('{{RELEVANT_EXPERIENCE_BLOCK}}'));
-  return renderTemplate(source, buildReplacements(payload));
+  const html = renderTemplate(source, buildReplacements(payload));
+  validateTailoringMetadata('cover_letter', payload, html, { required: requireTailoring });
+  return html;
 }
 
-export function buildMarkdown(payload, templatePath) {
+export function buildMarkdown(payload, templatePath, { requireTailoring = false } = {}) {
   const resolvedPath = templatePath || resolveCoverTemplatePath(payload, { format: "md" });
   const source = readFileSync(resolvedPath, "utf-8");
   const contract = getTemplateContract(resolvedPath);
@@ -526,7 +528,9 @@ export function buildMarkdown(payload, templatePath) {
   replacements["{{CLOSING_BLOCK}}"] = escapeHtml(payload.letter.closing || "");
   replacements["{{LANGUAGE_CLOSING_BLOCK}}"] = escapeHtml(payload.letter.language_closing || "");
   replacements["{{SIGNATURE_BLOCK}}"] = buildMarkdownSignatureBlock(payload.letter.signature, payload.candidate.name);
-  return renderTemplate(readFileSync(resolvedPath, "utf-8"), replacements);
+  const markdown = renderTemplate(readFileSync(resolvedPath, "utf-8"), replacements);
+  validateTailoringMetadata('cover_letter', payload, markdown, { required: requireTailoring });
+  return markdown;
 }
 
 /** Parse a payload, run the fact gate, and write Markdown or render PDF. */
@@ -537,6 +541,7 @@ async function main() {
       out:     { type: "string" },
       format:  { type: "string" },
       markdown:{ type: "boolean" },
+      tailored:{ type: "boolean" },
       report:  { type: "string" },
       help:    { type: "boolean", short: "h" },
     },
@@ -553,6 +558,7 @@ Usage:
   --out       Override output path from payload (optional)
   --format    Override output PDF page format (letter|a4, default: a4)
   --markdown  Write the approved Markdown artifact instead of rendering PDF
+  --tailored  Require tailoring metadata and JD keyword coverage
   --report    Link the PDF to a tracker report number in data/pdf-index.tsv
 `);
     process.exit(args.help ? 0 : 1);
@@ -588,7 +594,9 @@ Usage:
 
   try {
     const rules = loadDocumentRules();
-    const artifact = markdown ? buildMarkdown(payload) : buildHtml(payload);
+    const artifact = markdown
+      ? buildMarkdown(payload, undefined, { requireTailoring: args.tailored })
+      : buildHtml(payload, undefined, { requireTailoring: args.tailored });
     validateRenderedWordCount("cover_letter", artifact, rules, markdown ? "md" : "html");
     // Cover letters are candidate-facing documents too. Reuse the CV fact
     // validator before importing Playwright or writing a PDF so a failed gate

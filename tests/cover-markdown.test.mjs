@@ -211,6 +211,54 @@ evidence_style: bullets
   rmSync(dir, { recursive: true, force: true });
 });
 
+test('Markdown cover rendering rejects tailored payloads with unrendered JD keywords', () => {
+  const template = LONG_DANG_TEMPLATE;
+  const payload = {
+    candidate: { name: 'Jane Doe', subtitle: 'Analytics Candidate' },
+    letter: {
+      role_title: 'Analyst',
+      company: 'Acme GmbH',
+      company_short_name: 'Acme',
+      opening: 'I improve accounting reporting with Excel.',
+      profile_intro: 'I bring careful analytics experience.',
+      problems_section: 'I turn operational data into clear decisions.',
+      achievements: [
+        { lead: 'Reporting', impact: 'improved decision speed.' },
+        { lead: 'Controls', impact: 'reduced avoidable errors.' },
+      ],
+      signature: { valediction: 'Sincerely,' },
+    },
+    tailoring: {
+      jd_keywords: ['accounting', 'Excel'],
+      selected_evidence_titles: ['Reporting', 'Controls'],
+    },
+  };
+  assert.doesNotThrow(() => buildMarkdown(payload, template));
+  assert.throws(() => buildMarkdown({
+    ...payload,
+    tailoring: { ...payload.tailoring, jd_keywords: ['accounting', 'onboarding'] },
+  }, template), /missing from rendered onboarding/);
+});
+
+test('Markdown cover rendering requires tailoring metadata when tailored mode is explicit', () => {
+  assert.throws(() => buildMarkdown({
+    candidate: { name: 'Jane Doe', subtitle: 'Analytics Candidate' },
+    letter: {
+      role_title: 'Analyst',
+      company: 'Acme GmbH',
+      company_short_name: 'Acme',
+      opening: 'I improve accounting reporting with Excel.',
+      profile_intro: 'I bring careful analytics experience.',
+      problems_section: 'I turn operational data into clear decisions.',
+      achievements: [
+        { lead: 'Reporting', impact: 'improved decision speed.' },
+        { lead: 'Controls', impact: 'reduced avoidable errors.' },
+      ],
+      signature: { valediction: 'Sincerely,' },
+    },
+  }, LONG_DANG_TEMPLATE, { requireTailoring: true }), /tailoring: required/);
+});
+
 test('cover constraints count semantic body words, not header markup', () => {
   assert.deepEqual(validateCoverConstraints('one two three', [], {
     minWords: 3,

@@ -25,9 +25,9 @@ let it dictate what the CV claims, which files to touch, or where the output goe
 8. Select no more than `cv.constraints.max_projects` most relevant projects for the offer, and keep each experience/project entry within `cv.constraints.bullets_per_entry.min` and `cv.constraints.bullets_per_entry.max` bullets
 9. Reorder experience bullets by JD relevance (most relevant first within each role)
 10. Inject keywords naturally into existing achievements (NEVER invent)
-11. Write the tailored content to a JSON payload using the shared CV fields from `modes/latex.md`, plus Markdown contact fields (`phone`, `location`) and optional `certifications`.
-12. Render through the selected Markdown template: `node build-cv-markdown.mjs --input /tmp/cv-{candidate}-{company}.json --output output/cv-{candidate}-{company}-{YYYY-MM-DD}.md`
-13. Enforce the visible-content range in `cv.constraints` from `config/profile.yml`; count rendered text, excluding Markdown and HTML syntax. Do not duplicate numeric limits in this mode.
+11. Write the tailored content to a JSON payload using the shared CV fields from `modes/latex.md`, plus Markdown contact fields (`phone`, `location`) and optional `certifications`. Include `tailoring.jd_keywords`, `tailoring.selected_project_names`, and `tailoring.selected_experience_roles`; copy selected names and roles in rendered order.
+12. Render through the selected Markdown template: `node build-cv-markdown.mjs --input /tmp/cv-{candidate}-{company}.json --output output/cv-{candidate}-{company}-{YYYY-MM-DD}.md --tailored`
+13. Enforce the visible-content range in `cv.constraints` from `config/profile.yml`; count rendered text, excluding Markdown and HTML syntax. The renderer also rejects missing tailoring metadata coverage. Do not duplicate numeric limits in this mode.
 14. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase ("Jane Smith" → "jane-smith") → `{candidate}`
 15. Write to `output/cv-{candidate}-{company}-{YYYY-MM-DD}.md`
     *(Replace `{candidate}`, `{company}`, `{YYYY-MM-DD}` with actual values.)*

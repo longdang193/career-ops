@@ -32,6 +32,10 @@ const payload = () => ({
     role_title: 'Backend Engineer',
     opening: 'I am applying for this role.',
     profile_intro: 'Five years of backend work.',
+    achievements: [
+      { lead: 'Delivery', impact: 'Improved execution.' },
+      { lead: 'Quality', impact: 'Strengthened review.' },
+    ],
   },
 });
 

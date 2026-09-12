@@ -62,3 +62,37 @@ test('buildMarkdown rejects payload sections the Markdown template cannot render
     /will not appear in the output/
   );
 });
+
+test('buildMarkdown rejects tailored payloads that omit JD keywords from rendered CV', () => {
+  const payload = {
+    name: 'Jane Doe',
+    summary: 'Accounting analyst with Excel experience.',
+    education: [],
+    experience: [{ company: 'Example GmbH', role: 'Analyst', bullets: ['Built reports.', 'Checked data.', 'Documented results.'] }],
+    projects: [{ name: 'Analytics', bullets: ['Built models.', 'Validated inputs.', 'Shared findings.'] }],
+    certifications: [],
+    skills: [{ category: 'Tools', items: ['Excel'] }],
+    tailoring: {
+      jd_keywords: ['accounting', 'Excel'],
+      selected_project_names: ['Analytics'],
+      selected_experience_roles: ['Analyst'],
+    },
+  };
+  assert.doesNotThrow(() => buildMarkdown(payload, TEMPLATE));
+  assert.throws(() => buildMarkdown({
+    ...payload,
+    tailoring: { ...payload.tailoring, jd_keywords: ['accounting', 'onboarding'] },
+  }, TEMPLATE), /missing from rendered onboarding/);
+});
+
+test('buildMarkdown requires tailoring metadata when tailored mode is explicit', () => {
+  assert.throws(() => buildMarkdown({
+    name: 'Jane Doe',
+    summary: 'Accounting analyst.',
+    education: [],
+    experience: [{ company: 'Example GmbH', role: 'Analyst', bullets: ['Built reports.', 'Checked data.', 'Documented results.'] }],
+    projects: [{ name: 'Analytics', bullets: ['Built models.', 'Validated inputs.', 'Shared findings.'] }],
+    certifications: [],
+    skills: [{ category: 'Tools', items: ['Excel'] }],
+  }, TEMPLATE, { requireTailoring: true }), /tailoring: required/);
+});

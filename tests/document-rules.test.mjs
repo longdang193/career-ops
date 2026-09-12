@@ -10,6 +10,7 @@ import {
   validateDocumentRules,
   validatePayloadLimits,
   validateRenderedWordCount,
+  validateTailoringMetadata,
 } from '../lib/document-rules.mjs';
 
 const PROFILE = {
@@ -135,6 +136,40 @@ test('validatePayloadLimits enforces cover evidence bounds without template over
   assert.throws(() => validatePayloadLimits('cover_letter', {
     letter: { achievements: [{}, {}, {}, {}, {}] },
   }, rules), /evidence.*2-4/);
+});
+
+test('validateTailoringMetadata proves CV selection and keyword coverage', () => {
+  const payload = {
+    projects: [{ name: 'Analytics' }],
+    experience: [{ role: 'Analyst' }],
+    tailoring: {
+      jd_keywords: ['accounting', 'Excel'],
+      selected_project_names: ['Analytics'],
+      selected_experience_roles: ['Analyst'],
+    },
+  };
+  assert.doesNotThrow(() => validateTailoringMetadata('cv', payload, 'Accounting work with Excel'));
+  assert.throws(() => validateTailoringMetadata('cv', payload, 'Accounting work'), /missing from rendered Excel/);
+  assert.throws(() => validateTailoringMetadata('cv', {
+    ...payload,
+    tailoring: { ...payload.tailoring, selected_project_names: [] },
+  }, 'Accounting work with Excel'), /selected_project_names/);
+  assert.doesNotThrow(() => validateTailoringMetadata('cv', { projects: [], experience: [] }, ''));
+});
+
+test('validateTailoringMetadata proves cover evidence selection and keyword coverage', () => {
+  const payload = {
+    letter: { experience: [{ title: 'Data quality' }, { title: 'Reporting' }] },
+    tailoring: {
+      jd_keywords: ['onboarding'],
+      selected_evidence_titles: ['Data quality', 'Reporting'],
+    },
+  };
+  assert.doesNotThrow(() => validateTailoringMetadata('cover_letter', payload, 'Onboarding and data quality reporting'));
+  assert.throws(() => validateTailoringMetadata('cover_letter', {
+    ...payload,
+    tailoring: { ...payload.tailoring, selected_evidence_titles: ['Reporting', 'Data quality'] },
+  }, 'Onboarding and data quality reporting'), /selected_evidence_titles/);
 });
 
 test('visible word validation strips document markup and enforces configured ranges', () => {

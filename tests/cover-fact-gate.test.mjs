@@ -22,6 +22,10 @@ try {
       role_title: 'Engineer',
       opening: 'I improved reliability for 25 users.',
       profile_intro: 'Profile.',
+      achievements: [
+        { lead: 'Reliability', impact: 'Improved service consistency.' },
+        { lead: 'Documentation', impact: 'Clarified operating steps.' },
+      ],
     },
   };
   const html = buildHtml(payload, template);

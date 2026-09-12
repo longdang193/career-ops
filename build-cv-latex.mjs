@@ -9,7 +9,7 @@ import { escapeLatex, sanitizeUrl } from './lib/latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { hasRequiredFields, hasText, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -149,7 +149,7 @@ async function main() {
 
   if (args.length === 0 || args.includes('--help')) {
     console.error('Usage:');
-    console.error('  node build-cv-latex.mjs <input.json> <output.tex>');
+    console.error('  node build-cv-latex.mjs <input.json> <output.tex> [--tailored]');
     console.error('  node build-cv-latex.mjs --test');
     process.exit(1);
   }
@@ -159,7 +159,9 @@ async function main() {
     return;
   }
 
-  const [inputPath, outputPath] = args;
+  const tailored = args.includes('--tailored');
+  const positional = args.filter((arg) => arg !== '--tailored');
+  const [inputPath, outputPath] = positional;
 
   if (!inputPath || !outputPath) {
     console.error('Usage: node build-cv-latex.mjs <input.json> <output.tex>');
@@ -255,6 +257,13 @@ async function main() {
   const unresolved = template.match(PLACEHOLDER_RE);
   if (unresolved) {
     console.error(`Unresolved placeholders: ${[...new Set(unresolved)].join(', ')}`);
+    process.exit(1);
+  }
+
+  try {
+    validateTailoringMetadata('cv', payload, template, { required: tailored });
+  } catch (err) {
+    console.error(err.message);
     process.exit(1);
   }
 

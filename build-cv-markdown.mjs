@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 import { resolveTemplate, validateTemplate } from './cv-templates.mjs';
 import { isMainModule } from './lib/is-main-module.mjs';
 
@@ -127,7 +127,7 @@ function renderTemplate(source, replacements) {
   return rendered;
 }
 
-export function buildMarkdown(payload, templatePath) {
+export function buildMarkdown(payload, templatePath, { requireTailoring = false } = {}) {
   const path = templatePath || resolveTemplate('cv', undefined, { format: 'md' });
   if (!existsSync(path)) throw new Error(`Template not found: ${path}`);
   const validity = validateTemplate(path, 'cv');
@@ -136,7 +136,7 @@ export function buildMarkdown(payload, templatePath) {
   if (errors.length) throw new Error(`Invalid CV payload: ${errors.join('; ')}`);
   if (warnings.length) throw new Error(`CV payload cannot be rendered safely: ${warnings.join('; ')}`);
   validatePayloadLimits('cv', payload, loadDocumentRules());
-  return renderTemplate(readFileSync(path, 'utf8'), {
+  const markdown = renderTemplate(readFileSync(path, 'utf8'), {
     '{{NAME}}': markdownText(payload.name),
     '{{CONTACT_BLOCK}}': buildContact(payload),
     '{{SUMMARY}}': markdownText(payload.summary),
@@ -146,6 +146,8 @@ export function buildMarkdown(payload, templatePath) {
     '{{CERTIFICATIONS}}': buildCertifications(payload.certifications),
     '{{SKILLS}}': buildSkills(payload.skills),
   });
+  validateTailoringMetadata('cv', payload, markdown, { required: requireTailoring });
+  return markdown;
 }
 
 function main() {
@@ -154,12 +156,13 @@ function main() {
       input: { type: 'string' },
       output: { type: 'string' },
       template: { type: 'string' },
+      tailored: { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
   });
   if (values.help || !values.input || !values.output) {
-    console.error('Usage: node build-cv-markdown.mjs --input payload.json --output output.md [--template name]');
+    console.error('Usage: node build-cv-markdown.mjs --input payload.json --output output.md [--template name] [--tailored]');
     process.exit(values.help ? 0 : 1);
   }
   const input = resolve(values.input);
@@ -167,7 +170,7 @@ function main() {
   if (!existsSync(input)) throw new Error(`Input file not found: ${input}`);
   const markdown = buildMarkdown(JSON.parse(readFileSync(input, 'utf8')), values.template
     ? resolveTemplate('cv', values.template, { format: 'md' })
-    : undefined);
+    : undefined, { requireTailoring: values.tailored });
   validateRenderedWordCount('cv', markdown, loadDocumentRules(), 'md');
   writeFileSync(output, markdown, 'utf8');
   console.log(`CV Markdown: ${output}`);

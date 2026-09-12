@@ -33,7 +33,7 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount } from './lib/document-rules.mjs';
+import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -660,7 +660,7 @@ function renderReport(payload, partials) {
 
 // Merge a payload into the template and return the final HTML (throws on any
 // unresolved {{PLACEHOLDER}} so a malformed payload fails loudly, not silently).
-function renderHtml(template, payload, templatePath) {
+function renderHtml(template, payload, templatePath, { requireTailoring = false } = {}) {
   // Load section partials from the sections/ directory co-located with the
   // template. Falls back to built-in builders when no partials directory exists.
   const partials = templatePath ? loadSectionPartials(templatePath) : new Map();
@@ -733,8 +733,8 @@ async function main() {
 
   if (args.length === 0 || args.includes('--help')) {
     console.error('Usage:');
-    console.error('  node build-cv-html.mjs <input.json> <output.html> [template.html]');
-    console.error('  node build-cv-html.mjs --preview <input.json> [template.html]');
+    console.error('  node build-cv-html.mjs <input.json> <output.html> [template.html] [--tailored]');
+    console.error('  node build-cv-html.mjs --preview <input.json> [template.html] [--tailored]');
     console.error('  node build-cv-html.mjs --test');
     console.error('');
     console.error('  [template.html] defaults to templates/cv-template.html. Pass the path');
@@ -755,9 +755,11 @@ async function main() {
   }
 
   const preview = args[0] === '--preview';
+  const tailored = args.includes('--tailored');
+  const positional = args.filter((arg) => arg !== '--tailored');
   const [inputPath, outputPath, templateArg] = preview
-    ? [args[1], resolve(DATA_ROOT, 'output', 'cv-preview.html'), args[2]]
-    : args;
+    ? [positional[1], resolve(DATA_ROOT, 'output', 'cv-preview.html'), positional[2]]
+    : positional;
   if (!inputPath || !outputPath) {
     console.error('Usage: node build-cv-html.mjs <input.json> <output.html> [template.html]');
     process.exit(1);
@@ -804,7 +806,7 @@ async function main() {
 
   let html;
   try {
-    html = renderHtml(template, payload, templatePath);
+    html = renderHtml(template, payload, templatePath, { requireTailoring: tailored });
   } catch (err) {
     console.error(err.message);
     process.exit(1);

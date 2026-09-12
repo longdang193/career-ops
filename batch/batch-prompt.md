@@ -479,8 +479,9 @@ If score is greater than or equal to the threshold:
 8. Reorder experience bullets by relevance.
 9. Build a 6-8 item competency grid.
 10. Inject keywords ethically into existing achievements; never invent skills or metrics.
-11. Write HTML to `output/cv-candidate-{company-slug}.html`.
-12. Run:
+11. Include tailoring metadata in the render payload: `tailoring.jd_keywords`, `tailoring.selected_project_names`, and `tailoring.selected_experience_roles`, copied from the final rendered content in order. The shared CV renderers reject missing keyword coverage or mismatched selection metadata.
+12. Write HTML to `output/cv-candidate-{company-slug}.html`.
+13. Run:
 
 ```bash
 node generate-pdf.mjs \
