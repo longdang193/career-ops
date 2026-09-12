@@ -124,6 +124,12 @@ let baseUrl    = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').re
 let apiKey     = process.env.OPENAI_API_KEY || '';
 let saveReport = true;
 let noCompress = false;
+const requestedReportNum = process.env.CAREER_OPS_REPORT_NUM?.trim() || '';
+
+if (requestedReportNum && !/^\d+$/.test(requestedReportNum)) {
+  console.error(`❌  Invalid CAREER_OPS_REPORT_NUM: "${requestedReportNum}"`);
+  process.exit(1);
+}
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--file' && args[i + 1]) {
@@ -523,12 +529,17 @@ if (saveReport) {
       mkdirSync(PATHS.reports, { recursive: true });
     }
 
-    reservedNumbers   = await reserveReportNumbers(1, { rootDir: ROOT, reportsDir: PATHS.reports });
-    const num         = formatReportNumber(reservedNumbers[0]);
+    if (!requestedReportNum) {
+      reservedNumbers = await reserveReportNumbers(1, { rootDir: ROOT, reportsDir: PATHS.reports });
+    }
+    const num         = requestedReportNum
+      ? formatReportNumber(Number(requestedReportNum))
+      : formatReportNumber(reservedNumbers[0]);
     const today       = new Date().toISOString().split('T')[0];
     const companySlug = slugifyCompany(company);
     const filename    = `${num}-${companySlug}-${today}.md`;
     const reportPath  = join(PATHS.reports, filename);
+    if (existsSync(reportPath)) throw new Error(`report already exists: ${reportPath}`);
 
     const reportContent = `# Evaluation: ${company} — ${role}
 
@@ -599,5 +610,14 @@ ${evaluationText.replace(/---SCORE_SUMMARY---[\s\S]*?---END_SUMMARY---/, '').tri
 console.log('\n' + '─'.repeat(66));
 console.log(`  Score: ${score}/5  |  Archetype: ${archetype}  |  Legitimacy: ${legitimacy}`);
 console.log('─'.repeat(66) + '\n');
+
+const numericScore = Number.parseFloat(score);
+console.log('```json');
+console.log(JSON.stringify({
+  status: 'completed',
+  error: '',
+  score: Number.isFinite(numericScore) ? numericScore : null,
+}));
+console.log('```');
 
 console.log(formatBreakdown(tracker, modelName, 'openai'));

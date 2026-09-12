@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# career-ops batch runner — standalone orchestrator for claude -p workers
-# Reads batch-input.tsv, delegates each offer to a claude -p worker,
+# career-ops batch runner — standalone orchestrator for headless workers
+# Reads batch-input.tsv, delegates each offer to a configured worker,
 # tracks state in batch-state.tsv for resumability.
 #
-# NOTE: This script is Claude Code-specific. It uses claude -p with
-# --dangerously-skip-permissions and --append-system-prompt-file flags
-# that are not available in other CLIs. Multi-CLI support is out of scope
-# for now — contributions welcome.
+# Claude remains the fallback. OpenAI-compatible mode uses openai-eval.mjs.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -42,6 +39,8 @@ MAX_RETRIES=2
 MIN_SCORE=0
 SKIP_PDF=false
 MODEL=""  # explicit override; otherwise resolved from config/profile.yml spend_tier
+BATCH_PROVIDER="${CAREER_OPS_BATCH_PROVIDER:-auto}"
+RESOLVED_PROVIDER=""
 RESOLVED_MODEL=""
 RESOLVED_SPEND_TIER=""
 RATE_LIMIT_SLEEP=300
@@ -57,8 +56,8 @@ is_decimal_number() {
 
 usage() {
   cat <<'USAGE'
-career-ops batch runner — process job offers in batch via claude -p workers
-Uses spend_tier from config/profile.yml unless --model overrides it.
+career-ops batch runner — process job offers in batch via headless workers
+Provider defaults to auto: OpenAI-compatible settings in .env win, otherwise Claude.
 
 Usage: batch-runner.sh [OPTIONS]
 
@@ -73,6 +72,7 @@ Options:
   --max-retries N      Max retry attempts per offer (default: 2)
   --min-score N        Skip PDF/tracker for offers scoring below N (default: 0 = off)
   --skip-pdf           Skip PDF generation entirely (write ❌ in tracker PDF column)
+  --provider NAME      Worker provider: auto, openai, or claude (default: auto)
   --rate-limit-sleep N Seconds to wait before retrying a rate-limited worker
                        (default: 300)
   --model NAME         Override the tier-resolved Claude model passed to
@@ -121,6 +121,11 @@ while [[ $# -gt 0 ]]; do
     --max-retries) MAX_RETRIES="$2"; shift 2 ;;
     --min-score) MIN_SCORE="$2"; shift 2 ;;
     --skip-pdf) SKIP_PDF=true; shift ;;
+    --provider)
+      [[ $# -ge 2 ]] || { echo "ERROR: --provider requires a value"; exit 1; }
+      BATCH_PROVIDER="$2"
+      shift 2
+      ;;
     --rate-limit-sleep)
       [[ $# -ge 2 ]] || { echo "ERROR: --rate-limit-sleep requires an argument"; exit 1; }
       RATE_LIMIT_SLEEP="$2"
@@ -278,6 +283,10 @@ release_lock() {
 trap release_lock EXIT
 
 # Validate prerequisites
+resolve_batch_provider() {
+  RESOLVED_PROVIDER="$(node "$BATCH_DIR/provider.mjs" "$BATCH_PROVIDER" "$PROJECT_DIR/.env")" || exit 1
+}
+
 check_prerequisites() {
   if [[ ! -f "$INPUT_FILE" ]]; then
     echo "ERROR: $INPUT_FILE not found. Add offers first."
@@ -289,7 +298,16 @@ check_prerequisites() {
     exit 1
   fi
 
-  if ! command -v claude &>/dev/null; then
+  if [[ "$RESOLVED_PROVIDER" == "openai" ]]; then
+    if ! command -v node &>/dev/null; then
+      echo "ERROR: 'node' runtime not found in PATH."
+      exit 1
+    fi
+    if [[ ! -f "$PROJECT_DIR/openai-eval.mjs" ]]; then
+      echo "ERROR: openai-eval.mjs not found."
+      exit 1
+    fi
+  elif ! command -v claude &>/dev/null; then
     echo "ERROR: 'claude' CLI not found in PATH."
     exit 1
   fi
@@ -1028,18 +1046,26 @@ process_offer() {
     fi
   done
 
-  # Launch claude -p worker.
+  # Launch configured worker.
   # The model is resolved once per run from spend_tier unless --model was
   # passed. Building the command in an array keeps quoting safe regardless.
   # --strict-mcp-config (with no --mcp-config) starts workers with no MCP
   # servers: they only evaluate offers and need none. Without it each parallel
   # worker inherits the parent session's MCP (e.g. Playwright) and they deadlock
   # fighting over the single shared browser when --parallel > 1 (issue #506).
-  local -a claude_args=(-p --dangerously-skip-permissions --strict-mcp-config)
-  if [[ -n "$RESOLVED_MODEL" ]]; then
-    claude_args+=(--model "$RESOLVED_MODEL")
+  local -a worker_args=()
+  if [[ "$RESOLVED_PROVIDER" == "openai" ]]; then
+    worker_args=("$PROJECT_DIR/openai-eval.mjs" --file "$jd_file" --posting-url "$url")
+    if [[ -n "$MODEL" ]]; then
+      worker_args+=(--model "$MODEL")
+    fi
+  else
+    worker_args=(-p --dangerously-skip-permissions --strict-mcp-config)
+    if [[ -n "$RESOLVED_MODEL" ]]; then
+      worker_args+=(--model "$RESOLVED_MODEL")
+    fi
+    worker_args+=(--append-system-prompt-file "$resolved_prompt" "$prompt")
   fi
-  claude_args+=(--append-system-prompt-file "$resolved_prompt" "$prompt")
 
   local exit_code=0
   local terminal_failure_recorded=false
@@ -1047,14 +1073,18 @@ process_offer() {
   local max_shim_retries=4
   while true; do
     exit_code=0
-    claude "${claude_args[@]}" > "$log_file" 2>&1 || exit_code=$?
+    if [[ "$RESOLVED_PROVIDER" == "openai" ]]; then
+      CAREER_OPS_REPORT_NUM="$report_num" node "${worker_args[@]}" > "$log_file" 2>&1 || exit_code=$?
+    else
+      claude "${worker_args[@]}" > "$log_file" 2>&1 || exit_code=$?
+    fi
 
     if [[ $exit_code -eq 0 ]]; then
       break
     fi
 
     # Check for Claude Code npm shim swap (exit code 127 + command not found)
-    if [[ $exit_code -eq 127 ]] && grep -qE "(claude: command not found|claude:.*not found|cannot find.*claude)" "$log_file" && (( shim_retries < max_shim_retries )); then
+    if [[ "$RESOLVED_PROVIDER" == "claude" && $exit_code -eq 127 ]] && grep -qE "(claude: command not found|claude:.*not found|cannot find.*claude)" "$log_file" && (( shim_retries < max_shim_retries )); then
       shim_retries=$((shim_retries + 1))
       echo "    ⏳ Claude command not found (shim swap detected). Retrying in 30s (attempt $shim_retries/$max_shim_retries)..."
       sleep 30
@@ -1395,9 +1425,12 @@ main() {
     prepare_jsonl_input
   fi
 
+  resolve_batch_provider
   check_prerequisites
 
-  resolve_worker_model
+  if [[ "$RESOLVED_PROVIDER" == "claude" ]]; then
+    resolve_worker_model
+  fi
 
   if [[ "$DRY_RUN" == "false" ]]; then
     acquire_lock
@@ -1426,7 +1459,10 @@ main() {
   else
     echo "Parallel: $PARALLEL | Max retries: $MAX_RETRIES"
   fi
-  if [[ "$RESOLVED_SPEND_TIER" == "override" ]]; then
+  echo "Provider: $RESOLVED_PROVIDER"
+  if [[ "$RESOLVED_PROVIDER" == "openai" ]]; then
+    echo "Model: configured by OPENAI_MODEL/.env${MODEL:+ (overridden by --model)}"
+  elif [[ "$RESOLVED_SPEND_TIER" == "override" ]]; then
     echo "Model: $RESOLVED_MODEL (explicit --model override)"
   else
     echo "Model: $RESOLVED_MODEL (spend_tier=${RESOLVED_SPEND_TIER})"

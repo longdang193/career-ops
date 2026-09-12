@@ -8,6 +8,7 @@ System-layer template files used by career-ops scripts and modes. These files ar
 |------|---------|---------|
 | `cv-template.html` | `generate-pdf.mjs` | HTML/CSS template for ATS-optimized CV PDFs |
 | `cv-template.{compact,executive,jake,leadership,modern}.html` | `generate-pdf.mjs`, `build-cv-html.mjs` (via `cv-templates.mjs`) | Named CV variants selectable per CV or as a `cv.template` default. Same placeholder tokens and ATS rules as `cv-template.html`. See detailed section below. |
+| `cv-template.md`, `cv-template.long-dang.md` | `build-cv-markdown.mjs` (via `cv-templates.mjs`) | Markdown CV templates. Inline HTML structure remains part of the template contract. |
 | `resume-template.html` | `generate-pdf.mjs` (via `--template`) | Resume-branded variant of `cv-template.html`. Same layout and placeholder tokens; differs in: `<title>` reads "Resume" instead of "CV", omits Certifications section (but keeps Awards & Honors), targets 1–2 page US/industry format. See detailed section below. |
 | `cv-template.tex` | `generate-latex.mjs` | LaTeX/Overleaf template for ATS-optimized CV PDFs |
 | `cv-template.cjk.tex` | `build-cv-latex.mjs --template=cjk`, `generate-latex.mjs` | CJK (Chinese/Japanese/Korean) variant of `cv-template.tex` — loads `fontspec`+`xeCJK`. Requires the `tectonic` engine (XeTeX backend); pdflatex still cannot render CJK. See "CJK variant" below and `modes/latex.md`. |

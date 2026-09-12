@@ -68,6 +68,17 @@ test('listTemplates: format filter (tex) is separate from html', () => {
   assert.deepEqual(tex.map((t) => t.name), ['standard']);
 });
 
+test('listTemplates: discovers Markdown CV templates', () => {
+  const dir = fixtureDir();
+  writeFileSync(join(dir, 'cv-template.long-dang.md'), '{{NAME}}{{EXPERIENCE}}{{EDUCATION}}');
+  assert.deepEqual(listTemplates('cv', { dir, format: 'md' }).map((t) => t.name), ['long-dang']);
+  assert.equal(resolveTemplate('cv', 'long-dang', { dir, format: 'md' }), join(dir, 'cv-template.long-dang.md'));
+});
+
+test('resolveTemplate: standard Markdown CV template is available', () => {
+  assert.equal(resolveTemplate('cv', 'standard', { format: 'md' }), join(process.cwd(), 'templates', 'cv-template.md'));
+});
+
 test('listTemplates: returns [] when the templates dir is absent', () => {
   const dir = join(tmpdir(), 'cvt-does-not-exist-38f2a1');
   assert.deepEqual(listTemplates('cv', { dir }), []);

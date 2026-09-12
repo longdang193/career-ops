@@ -1,0 +1,479 @@
+/* =========================================================
+   REVERSE COVER LETTER
+   =========================================================
+
+   Markdown Resume remains the source of truth for:
+   - theme color
+   - font family
+   - base font size
+   - line height
+   - page margins
+   - paper size
+
+   Required markup:
+   - milestone label: <h2 class="tl-kicker">
+   - evidence title: <h3 class="branch-title">
+
+   The selected theme color reaches custom timeline
+   elements through currentColor on those headings.
+   ========================================================= */
+
+
+/* ---------------------------------------------------------
+   1. DESIGN TOKENS
+   Change these first when adjusting the template.
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview {
+  /* neutral palette */
+  --cl-text: #111111;
+  --cl-text-muted: #4b5563;
+  --cl-line: #ccd6e2;
+  --cl-surface: #f7f9fb;
+  --cl-surface-focus: #f1f4f8;
+  --cl-border: #d8e0e8;
+
+  /* timeline geometry
+     px is intentional: these coordinates are shared across
+     elements with different font sizes. */
+  --tl-rail-x: 8px;
+  --tl-content-x: 36px;
+  --tl-node-size: 8px;
+  --tl-node-y: 6px;
+  --tl-connector-gap: 6px;
+
+  /* scalable layout */
+  --tl-item-gap: 1.1em;
+  --tl-card-gap-x: 0.8em;
+  --tl-card-gap-y: 0.6em;
+  --tl-radius: 0.42em;
+
+  background: #fff;
+  color: var(--cl-text);
+  text-align: left;
+  hyphens: auto;
+}
+
+
+/* ---------------------------------------------------------
+   2. BASE
+   --------------------------------------------------------- */
+
+.dark #vue-smart-pages-preview {
+  background: #fff !important;
+  color: var(--cl-text) !important;
+}
+
+#vue-smart-pages-preview :where(p, li, dl) {
+  margin: 0;
+}
+
+#vue-smart-pages-preview a {
+  text-decoration: none;
+}
+
+#vue-smart-pages-preview a:hover {
+  text-decoration: underline;
+}
+
+#vue-smart-pages-preview strong {
+  font-weight: 700;
+}
+
+#vue-smart-pages-preview :where(svg.iconify, iconify-icon) {
+  vertical-align: -0.15em;
+}
+
+#vue-smart-pages-preview img {
+  max-width: 100%;
+}
+
+
+/* ---------------------------------------------------------
+   3. HEADER
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .cover-header {
+  margin-bottom: 1.3em;
+  text-align: center;
+}
+
+#vue-smart-pages-preview .cover-header h1 {
+  margin: 0 0 0.18em;
+  border: 0;
+
+  font-size: 2.45em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+#vue-smart-pages-preview .cover-subtitle {
+  margin-bottom: 0.55em;
+
+  font-size: 0.96em;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#vue-smart-pages-preview .cover-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  font-size: 0.94em;
+}
+
+#vue-smart-pages-preview .cover-contact .resume-header-item {
+  white-space: nowrap;
+}
+
+#vue-smart-pages-preview
+.cover-contact
+.resume-header-item:not(.no-separator)::after {
+  content: " | ";
+  margin: 0 0.22em;
+  color: #7b8490;
+}
+
+
+/* ---------------------------------------------------------
+   4. CONVENTIONAL LETTER FRAME
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .cover-meta {
+  margin: 1.7em 0 1.25em;
+}
+
+#vue-smart-pages-preview .cover-subject {
+  margin-bottom: 1.05em;
+}
+
+#vue-smart-pages-preview .cover-intro {
+  margin: 0.75em 0 1.05em;
+}
+
+#vue-smart-pages-preview .cover-outro {
+  margin-top: 1.1em;
+}
+
+#vue-smart-pages-preview .cover-outro p + p {
+  margin-top: 0.65em;
+}
+
+#vue-smart-pages-preview .cover-signoff {
+  margin-top: 1.1em;
+}
+
+
+/* ---------------------------------------------------------
+   5. TIMELINE CONTAINER
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .reverse-letter {
+  margin: 0.9em 0 1.05em;
+}
+
+#vue-smart-pages-preview .timeline {
+  /*
+   * Rail coordinate relative to each .tl-content.
+   * Keeping this derived avoids duplicated arithmetic.
+   */
+  --tl-local-rail-x:
+    calc(-1 * var(--tl-content-x) + var(--tl-rail-x));
+
+  position: relative;
+}
+
+
+/* ---------------------------------------------------------
+   6. TIMELINE ITEM
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-item {
+  position: relative;
+
+  margin: 0 0 var(--tl-item-gap);
+  padding-left: var(--tl-content-x);
+
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+#vue-smart-pages-preview .tl-item:last-child {
+  margin-bottom: 0;
+}
+
+#vue-smart-pages-preview .tl-content {
+  position: relative;
+  display: flow-root;
+}
+
+
+/* ---------------------------------------------------------
+   7. VERTICAL RAIL
+
+   Each item draws from its own node to the next node.
+   Therefore:
+   - dot and rail share one x-coordinate
+   - no global rail
+   - no bottom mask
+   - final item simply draws no outgoing segment
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview
+.tl-item:not(:last-child)
+.tl-content::before {
+  content: "";
+
+  position: absolute;
+  z-index: 0;
+
+  left: var(--tl-local-rail-x);
+  top: var(--tl-node-y);
+
+  width: 1px;
+  height: calc(100% + var(--tl-item-gap));
+
+  background: var(--cl-line);
+
+  transform: translateX(-50%);
+}
+
+
+/* ---------------------------------------------------------
+   8. MILESTONE HEADING
+
+   Theme color comes from Markdown Resume because this is h2.
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-kicker {
+  position: relative;
+  z-index: 2;
+
+  margin: 0 0 0.3em;
+  padding: 0;
+  border: 0;
+
+  font-size: 0.76em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+
+/* ---------------------------------------------------------
+   9. TIMELINE NODE
+
+   currentColor = Markdown Resume theme color.
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-kicker::before {
+  content: "";
+
+  position: absolute;
+  z-index: 4;
+
+  left: var(--tl-local-rail-x);
+  top: var(--tl-node-y);
+
+  width: var(--tl-node-size);
+  height: var(--tl-node-size);
+
+  box-sizing: border-box;
+
+  border: 1px solid currentColor;
+  border-radius: 50%;
+
+  background: #fff;
+
+  /* isolate the node from the neutral rail */
+  box-shadow: 0 0 0 2px #fff;
+
+  transform: translate(-50%, -50%);
+}
+
+
+/* ---------------------------------------------------------
+   10. NODE → HEADING CONNECTOR
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-kicker::after {
+  content: "";
+
+  position: absolute;
+  z-index: 1;
+
+  left:
+    calc(
+      var(--tl-local-rail-x)
+      + var(--tl-node-size) / 2
+    );
+
+  top: var(--tl-node-y);
+
+  width:
+    calc(
+      var(--tl-content-x)
+      - var(--tl-rail-x)
+      - var(--tl-node-size) / 2
+      - var(--tl-connector-gap)
+    );
+
+  border-top: 1px solid currentColor;
+}
+
+
+/* ---------------------------------------------------------
+   11. FOCUS MILESTONE
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-focus .tl-kicker::before {
+  width: calc(var(--tl-node-size) + 3px);
+  height: calc(var(--tl-node-size) + 3px);
+
+  border: 2px solid #fff;
+  background: currentColor;
+
+  box-shadow:
+    0 0 0 1px currentColor,
+    0 0 0 3px #fff;
+}
+
+#vue-smart-pages-preview .tl-focus .tl-kicker::after {
+  border-top-width: 2px;
+}
+
+
+/* ---------------------------------------------------------
+   12. TIMELINE COPY
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-title {
+  margin-bottom: 0.14em;
+
+  color: var(--cl-text);
+
+  font-size: 1.06em;
+  font-weight: 700;
+}
+
+#vue-smart-pages-preview .tl-text {
+  color: var(--cl-text-muted);
+}
+
+
+/* ---------------------------------------------------------
+   13. PERSPECTIVE HIGHLIGHT
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .tl-highlight {
+  margin-top: 0.18em;
+  padding: 0.68em 0.85em;
+
+  background: var(--cl-surface-focus);
+
+  border-left: 2px solid var(--cl-line);
+  border-radius: var(--tl-radius);
+}
+
+#vue-smart-pages-preview .tl-highlight-title {
+  margin-bottom: 0.16em;
+
+  color: var(--cl-text);
+
+  font-size: 1.1em;
+  font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------
+   14. EXPERIENCE GRID
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .branch-group {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap:
+    var(--tl-card-gap-y)
+    var(--tl-card-gap-x);
+
+  margin-top: 0.5em;
+}
+
+
+/* ---------------------------------------------------------
+   15. EXPERIENCE CARD
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .branch-node {
+  min-width: 0;
+
+  box-sizing: border-box;
+
+  padding: 0.62em 0.75em;
+
+  background: var(--cl-surface);
+
+  border: 1px solid var(--cl-border);
+  border-radius: var(--tl-radius);
+
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+
+/* ---------------------------------------------------------
+   16. EXPERIENCE TITLE
+
+   Theme color comes from Markdown Resume because this is h3.
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .branch-title {
+  margin: 0 0 0.28em;
+  padding: 0;
+  border: 0;
+
+  font-size: 0.92em;
+  font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------
+   17. EVIDENCE LISTS
+   --------------------------------------------------------- */
+
+#vue-smart-pages-preview .leaf-list {
+  margin: 0;
+  padding-left: 1.05em;
+}
+
+#vue-smart-pages-preview .leaf-list li {
+  margin: 0.08em 0;
+}
+
+#vue-smart-pages-preview .contribution-list {
+  margin-top: 0.25em;
+}
+
+
+/* ---------------------------------------------------------
+   18. PRINT
+   --------------------------------------------------------- */
+
+@media print {
+  #vue-smart-pages-preview {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  #vue-smart-pages-preview
+  :where(.tl-item, .branch-node, .tl-highlight) {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

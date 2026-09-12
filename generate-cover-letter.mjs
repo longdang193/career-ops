@@ -399,18 +399,11 @@ function buildMarkdownHtmlSignatureBlock(signature, candidateName) {
 
 // Resolve the cover-letter template through the shared resolver so a
 // `cover_letter.template` profile default, an explicit `payload.template`, and
-// installed template packs are all honored. Any resolver failure (no profile,
-// no templates dir, bad config) falls back to the base template, preserving the
-// original hardcoded behavior.
+// installed template packs are all honored. Resolver failures stay visible so a
+// configured template cannot silently be replaced by another presentation.
 export function resolveCoverTemplatePath(payload = {}, opts = {}) {
-  const scriptDir = dirname(fileURLToPath(import.meta.url));
   const format = opts.format || "html";
-  const base = resolve(scriptDir, "templates", `cover-letter-template.${format}`);
-  try {
-    return resolveTemplate("cover", payload.template, { format, fallback: true, ...opts });
-  } catch {
-    return base;
-  }
+  return resolveTemplate("cover", payload.template, { format, ...opts, fallback: false });
 }
 
 function buildReplacements(payload) {

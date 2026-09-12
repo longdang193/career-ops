@@ -10,6 +10,7 @@ import { buildHtml } from '../generate-cover-letter.mjs';
 console.log('\nCover letter fact gate');
 
 const tmp = mkdtempSync(join(tmpdir(), 'career-ops-cover-facts-'));
+const template = join(ROOT, 'templates', 'cover-letter-template.html');
 try {
   const source = join(tmp, 'cv.md');
   const config = join(tmp, 'cv-facts.json');
@@ -23,7 +24,7 @@ try {
       profile_intro: 'Profile.',
     },
   };
-  const html = buildHtml(payload);
+  const html = buildHtml(payload, template);
 
   try {
     const result = verifyFacts(html, { sourcePaths: [source], configPath: config, label: 'cover letter' });
@@ -41,7 +42,7 @@ try {
   const invented = buildHtml({
     ...payload,
     letter: { ...payload.letter, opening: 'I improved reliability for 26 users.' },
-  });
+  }, template);
   try {
     const result = verifyFacts(invented, { sourcePaths: [source], configPath: config, label: 'cover letter' });
     if (result.verdict !== 'block' || !Array.isArray(result.warnings)) {

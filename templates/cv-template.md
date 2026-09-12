@@ -1,5 +1,5 @@
 <!-- career-ops-template
-name: Long Dang Markdown CV
+name: Standard Markdown CV
 version: 1.0.0
 -->
 

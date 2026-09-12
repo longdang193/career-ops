@@ -17,6 +17,7 @@ All scripts live in the project root as `.mjs` modules. Most are exposed via
 | `npm run jd:similarity` | `jd-similarity.mjs` | Compare a new JD with a previous JD/CV and recommend reuse, edits, or regeneration |
 | `npm run img-to-pdf` | `img-to-pdf.mjs` | Convert a single screenshot/image into a single-page PDF |
 | `node build-cv-latex.mjs` | `build-cv-latex.mjs` | Build .tex from structured JSON payload |
+| `node build-cv-markdown.mjs` | `build-cv-markdown.mjs` | Build template-compliant Markdown from structured JSON payload |
 | `npm run sync-check` | `cv-sync-check.mjs` | Validate CV/profile consistency |
 | `npm run patterns` | `analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
@@ -282,6 +283,17 @@ Builds a `.tex` file from a structured JSON payload, handling template merge and
 ```bash
 node build-cv-latex.mjs input.json output.tex
 node build-cv-latex.mjs --test
+```
+
+## build-cv-markdown.mjs
+
+Builds a template-compliant Markdown CV from the same structured content fields
+used by the LaTeX builder. The selected `cv.template` in `config/profile.yml`
+is resolved as a Markdown template and its HTML structure is preserved.
+
+```bash
+node build-cv-markdown.mjs --input input.json --output output/cv.md
+node build-cv-markdown.mjs --input input.json --output output/cv.md --template long-dang
 ```
 
 **Exit codes:** `0` file generated, `1` missing inputs, invalid JSON, unresolved placeholders, or template not found.

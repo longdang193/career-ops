@@ -2827,8 +2827,9 @@ if (shared.includes('_profile.md')) {
   const coverSrc = readFile('modes/cover.md');
   const emailSrc = readFile('modes/email.md');
   const contractsIntact =
-    /350-420 words/.test(coverSrc) &&
-    /Bullet format/.test(coverSrc) &&
+    /Word budget/.test(coverSrc) &&
+    /configured.*min_words.*max_words/.test(coverSrc) &&
+    /Evidence format/.test(coverSrc) &&
     /Self-check/.test(coverSrc) &&
     /Tone consistency/.test(coverSrc) &&
     /Attachment checklist/i.test(emailSrc) &&
@@ -13728,6 +13729,7 @@ console.log('\n17. Cover letter greeting block');
 
 try {
   const { buildHtml } = await import(pathToFileURL(join(ROOT, 'generate-cover-letter.mjs')).href);
+  const template = join(ROOT, 'templates', 'cover-letter-template.html');
 
   const basePayload = {
     candidate: { name: 'Jane Doe' },
@@ -13742,7 +13744,7 @@ try {
   const withGreeting = buildHtml({
     ...basePayload,
     letter: { ...basePayload.letter, greeting: 'Dear Hiring Manager,' },
-  });
+  }, template);
   const greetingTag = '<p class="greeting">Dear Hiring Manager,</p>';
   const greetingIdx = withGreeting.indexOf(greetingTag);
   const openingIdx = withGreeting.indexOf('OPENING_MARKER');
@@ -13756,7 +13758,7 @@ try {
   const escaped = buildHtml({
     ...basePayload,
     letter: { ...basePayload.letter, greeting: 'Dear <O\'Brien> & "Co",' },
-  });
+  }, template);
   if (escaped.includes('Dear &lt;O&#39;Brien&gt; &amp; &quot;Co&quot;,') && !escaped.includes('Dear <O\'Brien>')) {
     pass('Greeting text is HTML-escaped');
   } else {
@@ -13764,7 +13766,7 @@ try {
   }
 
   // (b) greeting omitted → no salutation, no leftover token (backward compatible)
-  const withoutGreeting = buildHtml(basePayload);
+  const withoutGreeting = buildHtml(basePayload, template);
   if (!withoutGreeting.includes('class="greeting"')
       && !withoutGreeting.includes('{{GREETING_BLOCK}}')
       && withoutGreeting.includes('OPENING_MARKER')) {
@@ -13782,6 +13784,7 @@ console.log('\n18. Cover letter single-pass substitution');
 
 try {
   const { buildHtml } = await import(pathToFileURL(join(ROOT, 'generate-cover-letter.mjs')).href);
+  const template = join(ROOT, 'templates', 'cover-letter-template.html');
 
   // A field value that itself contains literal {{TOKEN}} sequences must NOT be
   // re-substituted. The old iterative split/join loop would have blanked these
@@ -13794,7 +13797,7 @@ try {
       opening: 'See {{FOOTNOTES_BLOCK}} and {{CLOSING_BLOCK}} markers.',
       profile_intro: 'Intro.',
     },
-  });
+  }, template);
 
   if (injected.includes('See {{FOOTNOTES_BLOCK}} and {{CLOSING_BLOCK}} markers.')) {
     pass('Field values containing {{TOKEN}} are left literal (single-pass, not re-substituted)');

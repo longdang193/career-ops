@@ -19,7 +19,7 @@ export const KINDS = {
   cv: {
     prefix: 'cv-template',
     profileKey: ['cv', 'template'],
-    formats: ['html', 'tex'],
+    formats: ['html', 'md', 'tex'],
     required: ['NAME', 'EXPERIENCE', 'EDUCATION'],
   },
   cover: {
@@ -294,7 +294,7 @@ export function resolveTemplate(kind, name, opts = {}) {
     throw new Error(`Template not found for kind=${kind} name=${chosen} (${fileFor(chosen)})`);
   }
   const path = entry.path;
-  if (format === 'html' || (kind === 'cover' && format === 'md')) {
+  if (format === 'html' || format === 'md') {
     const v = validateTemplate(path, kind);
     if (!v.ok) {
       // Name the file that is actually short, not the flat filename it would

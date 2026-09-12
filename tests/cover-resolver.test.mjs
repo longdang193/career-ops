@@ -38,8 +38,10 @@ test('resolveCoverTemplatePath: base template when nothing configured (backward-
   assert.equal(basename(p), 'cover-letter-template.html');
 });
 
-test('resolveCoverTemplatePath: falls back to base when the configured template is missing', () => {
+test('resolveCoverTemplatePath: fails when the configured template is missing', () => {
   const { dir, profile } = coverFixture('nonexistent');
-  const p = resolveCoverTemplatePath({}, { dir, profilePath: profile });
-  assert.equal(basename(p), 'cover-letter-template.html');
+  assert.throws(
+    () => resolveCoverTemplatePath({}, { dir, profilePath: profile }),
+    /Template not found for kind=cover name=nonexistent/
+  );
 });

@@ -12,6 +12,10 @@ For captured job records, use JSONL directly. The runner reads
 ./batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --parallel 1
 ```
 
+The runner selects the OpenAI-compatible provider automatically when `.env`
+contains `OPENAI_API_KEY`, `OPENAI_BASE_URL`, or `OPENAI_MODEL`; otherwise it
+uses Claude. Override with `--provider openai` or `--provider claude`.
+
 `job_url` is the preferred URL field, with `raw_job.jobUrl` as fallback.
 `raw_job.companyName`, `raw_job.title`, and `raw_job.location` provide batch
 notes. `descriptionHtml` and `enriched_job` are ignored. If

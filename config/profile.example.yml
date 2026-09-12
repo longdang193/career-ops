@@ -167,7 +167,7 @@ cv:
   #
   # Applies to the HTML output only. With output_format: latex the order comes
   # from templates/cv-template.tex, and with output_format: text it comes from
-  # cv.md; this setting does nothing in either case.
+  # templates/cv-template.md or the selected cv-template.<name>.md.
   #
   # This exists so the order can live in your profile instead of in
   # templates/cv-template.html, which update-system.mjs restores on every update.
