@@ -9,7 +9,7 @@ import { escapeLatex, sanitizeUrl } from './lib/latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { hasRequiredFields, hasText, validatePayload } from './lib/cv-payload-schema.mjs';
-import { formatCvList, formatEducationInstitution, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationInstitution, formatEducationLocation, formatSkillItems, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -135,7 +135,7 @@ function buildSkills(categories) {
   if (!Array.isArray(categories) || categories.length === 0) return '';
   return categories.map(c => {
     if (!hasRequiredFields(c, 'skills', 'tex')) return '';
-    const items = Array.isArray(c.items) ? c.items.join(', ') : (c.items || '');
+    const items = formatSkillItems(c.items);
     // category is optional (the spec requires only items), so an entry without
     // one must not render an empty bold group and a leading ": " — the HTML
     // builder drops the prefix the same way.
@@ -436,7 +436,7 @@ async function runSelfTest() {
     console.error(`Self-test failed: category-less skills line renders an empty prefix: ${noCategory}`);
     process.exit(1);
   }
-  if (!noCategory.includes('Docker, K8s')) {
+  if (!noCategory.includes('docker, K8s')) {
     console.error('Self-test failed: category-less skills line lost its items');
     process.exit(1);
   }

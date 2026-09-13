@@ -33,7 +33,7 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationLocation, formatSkillItems, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -565,7 +565,7 @@ function buildSkills(categories, partial) {
       const cat = c.category
         ? `<span class="skill-category">${escapeHtml(c.category)}:</span> `
         : '';
-      return `    <div class="skill-item">${cat}${escapeHtml(joinItems(c.items))}</div>`;
+      return `    <div class="skill-item">${cat}${escapeHtml(formatSkillItems(c.items))}</div>`;
     }).join('\n');
     return `<div class="skills-grid">\n${items}\n  </div>`;
   }
@@ -579,7 +579,7 @@ function buildSkills(categories, partial) {
     ]);
     return fillEntry(entryTemplate, blocks, {
       CATEGORY:    escapeHtml(c.category || ''),
-      ITEMS_TEXT:  escapeHtml(joinItems(c.items)),
+      ITEMS_TEXT:  escapeHtml(formatSkillItems(c.items)),
     }, blockValues);
   }).join('\n');
   return `<div class="skills-grid">\n${items}\n  </div>`;

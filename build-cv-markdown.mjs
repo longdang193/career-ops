@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { formatCvList, formatEducationInstitution, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationInstitution, formatEducationLocation, formatSkillItems, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 import { resolveTemplate, validateTemplate } from './cv-templates.mjs';
 import { isMainModule } from './lib/is-main-module.mjs';
 
@@ -109,7 +109,7 @@ function buildCertifications(entries = []) {
 
 function buildSkills(categories = []) {
   return categories.filter((entry) => hasRequiredFields(entry, 'skills', 'md')).map((entry) => {
-    const items = Array.isArray(entry.items) ? entry.items.map(markdownText).filter(Boolean).join(', ') : markdownText(entry.items);
+    const items = formatSkillItems(entry.items);
     return `**${markdownText(entry.category)}:** ${items}`;
   }).join('\n\n');
 }

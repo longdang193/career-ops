@@ -5,6 +5,26 @@ import { buildMarkdown } from '../build-cv-markdown.mjs';
 
 const TEMPLATE = resolve('templates/cv-template.long-dang.md');
 
+test('buildMarkdown renders skill lists in sentence case at line start', () => {
+  const markdown = buildMarkdown({
+    name: 'Jane Doe',
+    summary: 'Analytics candidate.',
+    education: [],
+    experience: [],
+    projects: [],
+    certifications: [],
+    skills: [
+      { category: 'business/domain knowledge', items: ['Process improvement', 'Stakeholder communication', 'Cross-functional collaboration'] },
+      { category: 'programming languages', items: ['Python', 'SQL'] },
+      { category: 'tools/frameworks', items: ['Git', 'FastAPI', 'GitHub Actions'] },
+    ],
+  }, TEMPLATE);
+
+  assert.match(markdown, /\*\*business\/domain knowledge:\*\* process improvement, Stakeholder communication, Cross-functional collaboration/);
+  assert.match(markdown, /\*\*programming languages:\*\* python, SQL/);
+  assert.match(markdown, /\*\*tools\/frameworks:\*\* git, FastAPI, GitHub Actions/);
+});
+
 test('buildMarkdown renders configured CV template without changing its HTML structure', () => {
   const markdown = buildMarkdown({
     name: 'Jane Doe',
