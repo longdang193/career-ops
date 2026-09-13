@@ -96,3 +96,50 @@ test('buildMarkdown requires tailoring metadata when tailored mode is explicit',
     skills: [{ category: 'Tools', items: ['Excel'] }],
   }, TEMPLATE, { requireTailoring: true }), /tailoring: required/);
 });
+
+test('tailored Markdown applies profile presentation policy', () => {
+  const markdown = buildMarkdown({
+    name: 'Jane Doe',
+    summary: 'Business analyst with market research and Python experience.',
+    education: [{ institution: 'Example University', location: 'Berlin, Germany', degree: 'M.Sc. Analytics', dates: '2024 - Present' }],
+    experience: [{ company: 'Example GmbH', role: 'Analyst', bullets: ['Built reports.', 'Checked data.', 'Documented results.'] }],
+    projects: [{ name: 'Analytics', context: ['Python', 'SQL', 'validation'], bullets: ['Built models.', 'Validated inputs.', 'Shared findings.'] }],
+    certifications: [{ title: 'Certificate', focus: ['SQL', 'data modeling'] }],
+    skills: [
+      { category: 'Business/Domain Knowledge', items: ['market research'] },
+      { category: 'Programming Languages', items: ['Python', 'SQL'] },
+      { category: 'Tools/Frameworks', items: ['Power BI', 'Git'] },
+    ],
+    tailoring: {
+      jd_keywords: ['business analyst', 'Python'],
+      selected_project_names: ['Analytics'],
+      selected_experience_roles: ['Analyst'],
+    },
+  }, TEMPLATE, { requireTailoring: true });
+
+  assert.match(markdown, /Example University, Germany/);
+  assert.doesNotMatch(markdown, /Example University, Berlin, Germany/);
+  assert.match(markdown, /Focus: SQL, data modeling/);
+  assert.match(markdown, /Python, SQL, validation/);
+});
+
+test('tailored Markdown rejects non-canonical skill categories', () => {
+  assert.throws(() => buildMarkdown({
+    name: 'Jane Doe',
+    summary: 'Business analyst with Excel and Python experience.',
+    education: [],
+    experience: [{ company: 'Example GmbH', role: 'Analyst', bullets: ['Built reports.', 'Checked data.', 'Shared findings.'] }],
+    projects: [],
+    certifications: [],
+    skills: [
+      { category: 'reporting and analysis tools', items: ['Excel', 'data analysis'] },
+      { category: 'business intelligence tools', items: ['Power BI'] },
+      { category: 'reporting and communication tools', items: ['PowerPoint'] },
+    ],
+    tailoring: {
+      jd_keywords: ['business analyst', 'Python'],
+      selected_project_names: [],
+      selected_experience_roles: ['Analyst'],
+    },
+  }, TEMPLATE, { requireTailoring: true }), /skills: missing required categories/);
+});

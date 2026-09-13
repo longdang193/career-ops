@@ -89,8 +89,11 @@ Run these steps in order.
 ### Step 1 — Load the JD
 
 1. Read `{{JD_FILE}}`. When this file contains captured text from JSONL input,
-   treat it as the canonical JD and do not fetch `{{URL}}` again.
-2. If the file is empty or missing, try to fetch the JD from `{{URL}}` with WebFetch.
+   treat it as the canonical JD and do not fetch `{{URL}}` again. The runner
+   appends a captured-JD policy when JSONL mode is active; obey that policy.
+2. If the file is empty or missing, follow the runner-provided captured-JD policy.
+   In legacy TSV mode, try to fetch the JD from `{{URL}}` with WebFetch. In
+   captured JSONL mode, stop without fetching, retrieving, or opening `{{URL}}`.
 3. If both fail, this is a hard stop — do ALL of the following, in this exact order, and nothing else:
    - Do **NOT** write a report file to `reports/`.
    - Do **NOT** write a tracker TSV line to `batch/tracker-additions/`.

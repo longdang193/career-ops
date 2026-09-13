@@ -68,9 +68,9 @@ const CV_JSON = {
   contact_line: 'City, State',
   linkedin: { url: 'https://linkedin.com/in/test', display: 'linkedin.com/in/test' },
   github: { url: 'https://github.com/test', display: 'github.com/test' },
-  summary: Array(440).fill('analysis').join(' '),
+  summary: Array(500).fill('analysis').join(' '),
   education: [],
-  experience: [{ company: 'Test Corp', role: 'Test Engineer', location: 'Remote', dates: '2024', bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
+  experience: [{ company: 'Test Corp', role: 'Test Engineer', location: 'Remote', dates: '2024', bullets: [`Did a thing ${Array(500).fill('analysis').join(' ')}`, 'Documented the workflow.', 'Improved repeatability.'] }],
   projects: [],
   skills: [{ category: 'Languages', items: 'Python' }],
 };

@@ -14,6 +14,7 @@ INPUT_FILE="$BATCH_DIR/batch-input.tsv"
 JSONL_INPUT=""
 JSONL_MANIFEST=""
 JSONL_TMP_DIR=""
+CAPTURED_JD_ONLY=false
 STATE_FILE="$BATCH_DIR/batch-state.tsv"
 PROMPT_FILE="$BATCH_DIR/batch-prompt.md"
 PROFILE_FILE="$PROJECT_DIR/config/profile.yml"
@@ -220,11 +221,9 @@ const reader = readline.createInterface({ input, crlfDelay: Infinity });
     urls.add(url);
 
     const description = typeof job.description === 'string' ? job.description : '';
-    let jdFile = '';
-    if (description.trim()) {
-      jdFile = path.join(tempDir, `${id}.txt`);
-      fs.writeFileSync(jdFile, description, { encoding: 'utf8', flag: 'wx' });
-    }
+    if (!description.trim()) error('missing raw_job.description');
+    const jdFile = path.join(tempDir, `${id}.txt`);
+    fs.writeFileSync(jdFile, description, { encoding: 'utf8', flag: 'wx' });
 
     const source = clean(row.source) || (new URL(url).hostname.toLowerCase().includes('linkedin') ? 'LinkedIn' : 'JSONL');
     const notes = [job.companyName, job.title, job.location].map(clean).filter(Boolean).join(' - ');
@@ -245,6 +244,7 @@ NODE
   fi
 
   INPUT_FILE="$JSONL_MANIFEST"
+  CAPTURED_JD_ONLY=true
 }
 
 cleanup_jsonl_input() {
@@ -855,6 +855,11 @@ reserve_report_num_retrying() {
 process_offer() {
   local id="$1" url="$2" source="$3" notes="$4" captured_jd_file="${5:-}"
 
+  if [[ "$CAPTURED_JD_ONLY" == "true" && ( -z "$captured_jd_file" || ! -s "$captured_jd_file" ) ]]; then
+    echo "ERROR: captured JSONL JD missing for offer #$id; refusing URL fallback" >&2
+    return 1
+  fi
+
   local started_at
   started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   local retries
@@ -876,6 +881,9 @@ process_offer() {
     echo "    JD source: captured JSONL"
   fi
 
+  if [[ "$CAPTURED_JD_ONLY" == "true" ]]; then
+    echo "    JD fetch disabled: captured JSONL is canonical"
+  else
   # Pre-populate $jd_file with a static curl fetch so the worker reads HTML
   # directly instead of always falling through to WebFetch (#2492). WebFetch is
   # unreliable on JS-rendered boards (Phenom, Workday, iCIMS) because it hits
@@ -994,6 +1002,7 @@ process_offer() {
       fi
     fi
   fi
+  fi
 
   echo "--- Processing offer #$id: $url (report $report_num, attempt $((retries + 1)))"
 
@@ -1031,6 +1040,10 @@ process_offer() {
     -e "s|{{DATE}}|${esc_date}|g" \
     -e "s|{{ID}}|${esc_id}|g" \
     "$PROMPT_FILE" > "$resolved_prompt"
+
+  if [[ "$CAPTURED_JD_ONLY" == "true" ]]; then
+    printf '\n\n## Captured JD policy\n\nRead the local JD file as canonical input. Never fetch, retrieve, or open the job URL. A missing or empty JD is a hard failure.\n' >> "$resolved_prompt"
+  fi
 
   # Inject user-layer personalization into the temporary worker prompt.
   # The resolved prompt is gitignored runtime state, so user profile data stays

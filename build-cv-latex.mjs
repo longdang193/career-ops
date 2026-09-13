@@ -9,7 +9,7 @@ import { escapeLatex, sanitizeUrl } from './lib/latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { hasRequiredFields, hasText, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -64,7 +64,7 @@ function buildEducation(entries) {
   const blocks = [];
   for (const e of entries) {
     if (!hasRequiredFields(e, 'education', 'tex')) continue;
-    let block = `    \\resumeSubheading\n      {${escapeLatex(e.institution)}}{${escapeLatex(e.location)}}\n      {${escapeLatex(e.degree)}}{${escapeLatex(e.dates)}}`;
+    let block = `    \\resumeSubheading\n      {${escapeLatex(e.institution)}}{${escapeLatex(formatEducationLocation(e.location))}}\n      {${escapeLatex(e.degree)}}{${escapeLatex(e.dates)}}`;
     if (Array.isArray(e.coursework) && e.coursework.length > 0) {
       const courses = e.coursework.map(c => escapeLatexBullet(c)).join(', ');
       block += `\n        \\resumeItemListStart\n            \\resumeItem{\\textbf{Coursework:} ${courses}}\n        \\resumeItemListEnd`;
@@ -105,7 +105,7 @@ function buildProjects(entries) {
   const blocks = [];
   for (const e of entries) {
     if (!hasRequiredFields(e, 'projects', 'tex')) continue;
-    const context = e.context ? ` \\emph{$|$ ${escapeLatex(e.context)}}` : '';
+    const context = e.context ? ` \\emph{$|$ ${escapeLatex(formatCvList(e.context))}}` : '';
     const url = sanitizeUrl(e.url);
     const nameFormatted = url
       ? `\\href{${escapeLatex(url, 'url')}}{\\textbf{${escapeLatex(e.name)}}}`
@@ -194,8 +194,9 @@ async function main() {
     process.exit(1);
   }
   for (const message of warnings) console.error(`Warning: ${message}`);
+  const rules = loadDocumentRules();
   try {
-    validatePayloadLimits('cv', payload, loadDocumentRules());
+    validatePayloadLimits('cv', payload, rules);
   } catch (err) {
     console.error(err.message);
     process.exit(1);
@@ -262,6 +263,7 @@ async function main() {
 
   try {
     validateTailoringMetadata('cv', payload, template, { required: tailored });
+    if (tailored) validateCvPresentation(payload, 'tex', rules);
   } catch (err) {
     console.error(err.message);
     process.exit(1);

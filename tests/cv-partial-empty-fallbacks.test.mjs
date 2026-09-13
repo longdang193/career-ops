@@ -23,7 +23,7 @@ const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Mixed Rows', email: 'mixed@example.com' },
-  summary: Array(440).fill('analysis').join(' '),
+  summary: Array(500).fill('analysis').join(' '),
   competencies: ['Competency'],
   experience: [{ company: 'Corp', role: 'Engineer', dates: '2024 - Present', bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   certifications: [

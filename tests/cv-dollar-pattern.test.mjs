@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const tmp = () => mkdtempSync(join(tmpdir(), 'cv-dollar-'));
-const longBullet = (text) => `${text} ${Array(160).fill('analysis').join(' ')}`;
+const longBullet = (text) => `${text} ${Array(170).fill('analysis').join(' ')}`;
 
 const run = (script, payload, out) =>
   execFileSync(process.execPath, [join(ROOT, script), payload, out], {
@@ -45,7 +45,7 @@ test("build-cv-latex: a $' in a bullet does not splice the template", () => {
     email: { url: 't@example.com', display: 't@example.com' },
     linkedin: { url: '', display: '' },
     github: { url: '', display: '' },
-    summary: Array(440).fill('analysis').join(' '),
+    summary: Array(500).fill('analysis').join(' '),
     education: [], projects: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',
@@ -74,7 +74,7 @@ test('build-cv-html: a $& in a bullet does not re-insert the placeholder', () =>
     lang: 'en',
     page_format: 'letter',
     candidate: { name: 'Test Candidate', email: 't@example.com' },
-    summary: Array(440).fill('analysis').join(' '),
+    summary: Array(500).fill('analysis').join(' '),
     competencies: ['Cloud'],
     projects: [], education: [], certifications: [], awards: [], skills: [],
     experience: [{
@@ -101,7 +101,7 @@ test('build-cv-latex: $` and $$ in a bullet survive verbatim', () => {
     email: { url: 't@example.com', display: 't@example.com' },
     linkedin: { url: '', display: '' },
     github: { url: '', display: '' },
-    summary: Array(440).fill('analysis').join(' '),
+    summary: Array(500).fill('analysis').join(' '),
     education: [], projects: [], awards: [], skills: [],
     experience: [{
       company: 'Test Corp', role: 'Engineer', location: 'Remote', dates: '2024',

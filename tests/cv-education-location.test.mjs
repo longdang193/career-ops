@@ -19,11 +19,11 @@ const BASE = {
   lang: 'en',
   page_format: 'letter',
   candidate: { name: 'Edu Location', email: 'edu@example.com' },
-  summary: Array(440).fill('analysis').join(' '),
+  summary: Array(500).fill('analysis').join(' '),
   competencies: ['Competency'],
   experience: [{ company: 'Corp', role: 'Engineer', dates: '2024', bullets: ['Did a thing', 'Documented the workflow.', 'Improved repeatability.'] }],
   education: [
-    { title: 'B.S. Computer Science', org: 'State University', location: 'Berkeley, CA', year: '2020' },
+    { title: 'B.S. Computer Science', org: 'State University', location: 'Berkeley, United States', year: '2020' },
     { title: 'M.S. Computer Science', org: 'Other University', year: '2022' },
   ],
   skills: [{ category: 'Languages', items: 'Node' }],
@@ -76,8 +76,8 @@ try {
   ]) {
     const present = build(`${label}-present`, BASE, templateArg);
     if (present) {
-      if (/<div class="edu-location">\s*Berkeley, CA\s*<\/div>/.test(present.html)) {
-        pass(`${label}: edu-location renders the city when location is set`);
+      if (/<div class="edu-location">\s*United States\s*<\/div>/.test(present.html)) {
+        pass(`${label}: edu-location renders the configured country-only location`);
       } else {
         fail(`${label}: edu-location not rendered for the entry with a location`);
       }

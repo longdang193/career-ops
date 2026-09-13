@@ -109,9 +109,10 @@ batch/batch-runner.sh --jsonl /path/to/jobs.filtered.jsonl --parallel 1
 ```
 
 The runner uses `raw_job.description` as the canonical JD and passes it to the
-existing worker `JD_FILE` contract. It does not call `curl` or WebFetch for a
-non-empty captured description. URL resolution prefers `job_url`, then
-`raw_job.jobUrl`; missing descriptions retain the existing URL fallback.
+existing worker `JD_FILE` contract. JSONL rows with missing or blank
+descriptions fail before processing; JSONL mode never calls `curl` or WebFetch
+and never falls back to the job URL. URL resolution prefers `job_url`, then
+`raw_job.jobUrl`. Legacy TSV input retains its existing URL fallback.
 `descriptionHtml` and `enriched_job` are optional derived fields and are not
 used for evaluation. Temporary normalized input and JD files are removed when
 the run exits. Existing `batch-input.tsv` input remains supported.

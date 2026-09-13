@@ -139,6 +139,20 @@ cv:
     bullets_per_entry:
       min: 3
       max: 4
+  presentation:
+    education_location: preserve
+    certificate_focus:
+      min_items: 2
+      max_items: 5
+    project_context:
+      max_items: 3
+    skills:
+      max_items: 3
+      required_categories:
+        - business/domain knowledge
+        - programming languages
+        - tools/frameworks
+      no_cross_category_overlap: true
   # Shared optional LLM audit for tailored CVs and cover letters.
   llm_audit:
     enabled: false

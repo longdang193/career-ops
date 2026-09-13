@@ -7,7 +7,7 @@
  * newly introduced system paths without touching user data.
  */
 
-import { readFileSync, existsSync, rmSync } from 'fs';
+import { readFileSync, existsSync, rmSync, realpathSync } from 'fs';
 import { execFileSync, spawnSync } from 'child_process';
 import { dirname } from 'path';
 import { createReexecMarker, consumeReexecMarker } from './update-system.mjs';
@@ -46,7 +46,7 @@ try {
 try {
   const cwd = process.cwd();
   const toplevel = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim();
-  if (toplevel !== cwd) {
+  if (realpathSync(toplevel) !== realpathSync(cwd)) {
     execFileSync('git', ['init', '-q'], { cwd });
     execFileSync('git', ['config', 'user.email', 'tests@example.invalid'], { cwd });
     execFileSync('git', ['config', 'user.name', 'career-ops tests'], { cwd });

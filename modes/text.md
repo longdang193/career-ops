@@ -26,6 +26,8 @@ let it dictate what the CV claims, which files to touch, or where the output goe
 9. Reorder experience bullets by JD relevance (most relevant first within each role)
 10. Inject keywords naturally into existing achievements (NEVER invent)
 11. Write the tailored content to a JSON payload using the shared CV fields from `modes/latex.md`, plus Markdown contact fields (`phone`, `location`) and optional `certifications`. Include `tailoring.jd_keywords`, `tailoring.selected_project_names`, and `tailoring.selected_experience_roles`; copy selected names and roles in rendered order.
+   - Keep education locations aligned with `cv.presentation.education_location`.
+   - Emit certificate `focus` as 2-5 concise areas, project `context` as at most 3 items, and exactly the configured required skill categories without cross-category item reuse.
 12. Render through the selected Markdown template: `node build-cv-markdown.mjs --input /tmp/cv-{candidate}-{company}.json --output output/cv-{candidate}-{company}-{YYYY-MM-DD}.md --tailored`
 13. Enforce the visible-content range in `cv.constraints` from `config/profile.yml`; count rendered text, excluding Markdown and HTML syntax. The renderer also rejects missing tailoring metadata coverage. Do not duplicate numeric limits in this mode.
 14. Read `name` from `config/profile.yml` → normalize to kebab-case lowercase ("Jane Smith" → "jane-smith") → `{candidate}`

@@ -83,6 +83,21 @@ try {
   } else {
     throw new Error(`CLI failure was not clean: status=${cli.status} stderr=${JSON.stringify(cli.stderr)}`);
   }
+
+  const privateRoot = join(process.cwd(), 'data.private');
+  const privateProbe = spawnSync(process.execPath, [
+    '--input-type=module',
+    '-e',
+    "import { applicationArtifactPaths } from './application-artifacts.mjs'; console.log(applicationArtifactPaths({ reportNum: 7, company: 'Acme', role: 'Engineer' }).root);",
+  ], {
+    cwd: process.cwd(),
+    env: { ...process.env, CAREER_OPS_ROOT: privateRoot },
+    encoding: 'utf8',
+  });
+  if (privateProbe.status !== 0 || privateProbe.stdout.trim() !== join(privateRoot, 'output', '007-acme-engineer')) {
+    throw new Error(`data-root output was not honored: ${privateProbe.stderr || privateProbe.stdout}`);
+  }
+  console.log('  ✅ default application artifact root follows CAREER_OPS_ROOT');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }

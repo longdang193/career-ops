@@ -104,7 +104,7 @@ Write a JSON file with this structure. `build-cv-latex.mjs` handles template mer
 | `experience[].dates` | string | Date range |
 | `experience[].bullets` | string[] | Reordered and keyword-injected achievement bullets. Wrap a span in `**…**` to emphasise it — the builder renders it as `\textbf{…}` after escaping (see **Markdown bold in bullets** below) |
 | `projects[].name` | string | From cv.md Projects |
-| `projects[].context` | string | Tech stack — appears next to project name |
+| `projects[].context` | string or string[] | Up to the configured `cv.presentation.project_context.max_items` concise technologies, methods, or domains — appears next to project name |
 | `projects[].dates` | string | Date range (or empty) |
 | `projects[].bullets` | string[] | Selected project achievements. Supports the same `**…**` emphasis |
 | `awards[].title` | string | Award name, from cv.md Awards / Honors |
@@ -112,6 +112,8 @@ Write a JSON file with this structure. `build-cv-latex.mjs` handles template mer
 | `awards[].year` | string | Optional — year, right-aligned |
 | `skills[].category` | string | Optional — skill category name (e.g. "Languages", "Frameworks"). Omitted, the line renders without the bold prefix. |
 | `skills[].items` | string or string[] | **Required** — a non-blank comma-separated string, or a non-empty array of non-blank strings (every element must be text; the builder joins the whole array). |
+
+Tailored CVs also follow `cv.presentation` in `config/profile.yml`: education location formatting, bounded certificate focus, concise project context, required skill categories, and cross-category overlap checks. The renderer rejects violations before writing.
 
 **The key names above are enforced, not suggestions (#3523).** The payload root must be an object, and before rendering `build-cv-latex.mjs` validates every entry in `education`, `experience`, `projects`, `awards` and `skills`:
 

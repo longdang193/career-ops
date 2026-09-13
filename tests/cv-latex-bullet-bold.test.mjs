@@ -18,6 +18,8 @@ import { tmpdir } from 'os';
 
 console.log('\nbuild-cv-latex — markdown bold in bullets (#3351)');
 
+const FILLER = Array(450).fill('analysis').join(' ');
+
 const PAYLOAD = {
   lang: 'en',
   page_format: 'letter',
@@ -31,7 +33,7 @@ const PAYLOAD = {
     dates: '2024 - Present',
     bullets: [
       // Bold applied, and LaTeX specials inside the span still escaped.
-      'Cut cold start to **1018 KB** on a **$2M budget & 99.9% uptime**',
+      `Cut cold start to **1018 KB** on a **$2M budget & 99.9% uptime** ${FILLER}`,
       // Injection probe: a literal \textbf typed by the candidate must stay
       // inert text rather than becoming a control sequence.
       'Wrote \\textbf{this} by hand and left 5 * 3 and *single* asterisks alone',

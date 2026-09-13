@@ -35,7 +35,7 @@
 
 
 import { execSync, execFile, execFileSync, spawn, spawnSync } from 'child_process';
-import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync as _rmSync, statSync, unlinkSync, realpathSync, symlinkSync, copyFileSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync as _rmSync, statSync, unlinkSync, realpathSync, symlinkSync, copyFileSync, cpSync } from 'fs';
 
 // Windows keeps a handle open on a just-exited child process's working files
 // for a short window (antivirus and Search Indexer widen it), so removing a
@@ -13249,6 +13249,14 @@ try {
   fail(`URL rediscovery tests crashed: ${e.message}`);
 }
 
+function copyBatchProviderFixture(tmp) {
+  mkdirSync(join(tmp, 'lib'), { recursive: true });
+  mkdirSync(join(tmp, 'node_modules'), { recursive: true });
+  copyFileSync(join(ROOT, 'batch', 'provider.mjs'), join(tmp, 'batch', 'provider.mjs'));
+  copyFileSync(join(ROOT, 'lib', 'is-main-module.mjs'), join(tmp, 'lib', 'is-main-module.mjs'));
+  cpSync(join(ROOT, 'node_modules', 'dotenv'), join(tmp, 'node_modules', 'dotenv'), { recursive: true });
+}
+
 // ── 13. BATCH RATE-LIMIT PAUSE ──────────────────────────────────
 
 console.log('\n13. Batch rate-limit pause');
@@ -13261,6 +13269,7 @@ try {
   mkdirSync(join(tmp, 'reports'), { recursive: true });
   mkdirSync(join(tmp, 'data'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
+  copyBatchProviderFixture(tmp);
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
   if (process.platform === 'win32') {
@@ -13292,7 +13301,7 @@ try {
     execFileSync('chmod', ['+x', join(fakeBin, 'claude'), join(fakeBin, 'curl')]);
   }
 
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}` };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}` };
   const out = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1', '--max-retries', '3', '--rate-limit-sleep', '0'], {
     cwd: tmp,
     env,
@@ -13361,6 +13370,7 @@ try {
   mkdirSync(join(tmp, 'reports'), { recursive: true });
   mkdirSync(join(tmp, 'data'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
+  copyBatchProviderFixture(tmp);
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
   if (process.platform === 'win32') {
@@ -13402,7 +13412,7 @@ try {
 
   run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1', '--rate-limit-sleep', '0'], {
     cwd: tmp,
-    env: { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}` },
+    env: { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}` },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
@@ -13440,6 +13450,7 @@ try {
   mkdirSync(join(tmp, 'reports'), { recursive: true });
   mkdirSync(join(tmp, 'data'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
+  copyBatchProviderFixture(tmp);
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
   if (process.platform === 'win32') {
@@ -13480,7 +13491,7 @@ try {
 
   run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1', '--rate-limit-sleep', '0'], {
     cwd: tmp,
-    env: { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}` },
+    env: { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}` },
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
@@ -13516,6 +13527,7 @@ function makeTierFixture(profileYml) {
   mkdirSync(join(tmp, 'reports'), { recursive: true });
   mkdirSync(join(tmp, 'data'), { recursive: true });
   mkdirSync(fakeBin, { recursive: true });
+  copyBatchProviderFixture(tmp);
 
   writeFileSync(join(batchDir, 'batch-runner.sh'), readFileSync(join(ROOT, 'batch/batch-runner.sh'), 'utf-8').replace(/\r\n/g, '\n'));
   if (process.platform === 'win32') {
@@ -13551,7 +13563,7 @@ function makeTierFixture(profileYml) {
 try {
   const { tmp, batchDir, fakeBin } = makeTierFixture('spend_tier: economy\n');
   const argFile = join(tmp, 'claude-argv.txt');
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
   const out = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1'], { cwd: tmp, env, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
   const argv = existsSync(argFile) ? readFileSync(argFile, 'utf-8') : '';
   if (argv.includes('--model') && argv.includes('claude-haiku-4-5') && out.includes('spend_tier=economy')) {
@@ -13566,7 +13578,7 @@ try {
 try {
   const { tmp, batchDir, fakeBin } = makeTierFixture('spend_tier: premium\n');
   const argFile = join(tmp, 'claude-argv.txt');
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
   const premiumOut = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1'], { cwd: tmp, env, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
   const premiumArgv = existsSync(argFile) ? readFileSync(argFile, 'utf-8') : '';
   if (premiumArgv.includes('--model') && premiumArgv.includes('claude-opus-5') && premiumOut.includes('spend_tier=premium')) {
@@ -13581,7 +13593,7 @@ try {
 try {
   const { tmp, batchDir, fakeBin } = makeTierFixture('spend_tier: premium\n');
   const argFile = join(tmp, 'claude-argv.txt');
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
   const overrideOut = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1', '--model', 'claude-sonnet-5'], { cwd: tmp, env, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
   const overrideArgv = existsSync(argFile) ? readFileSync(argFile, 'utf-8') : '';
   if (overrideArgv.includes('--model') && overrideArgv.includes('claude-sonnet-5') && !overrideArgv.includes('claude-opus-5') && overrideOut.includes('explicit --model override')) {
@@ -13596,7 +13608,7 @@ try {
 try {
   const { tmp, batchDir, fakeBin } = makeTierFixture('# no spend_tier key\nname: test\n');
   const argFile = join(tmp, 'claude-argv.txt');
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
   const standardDefaultOut = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1'], { cwd: tmp, env, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
   const standardDefaultArgv = existsSync(argFile) ? readFileSync(argFile, 'utf-8') : '';
   if (standardDefaultArgv.includes('--model') && standardDefaultArgv.includes('claude-sonnet-5') && standardDefaultOut.includes('spend_tier=standard')) {
@@ -13611,7 +13623,7 @@ try {
 try {
   const { tmp, batchDir, fakeBin } = makeTierFixture('spend_tier: turbo\n');
   const argFile = join(tmp, 'claude-argv.txt');
-  const env = { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
+  const env = { ...process.env, CAREER_OPS_BATCH_PROVIDER: 'claude', PATH: `${fakeBin}${delimiter}${process.env.PATH}`, BATCH_ARG_FILE: argFile };
   const invalidTierOut = run(getBash(), [toBashPath(join(batchDir, 'batch-runner.sh')), '--parallel', '1'], { cwd: tmp, env, stdio: ['pipe', 'pipe', 'pipe'] }) || '';
   const invalidTierArgv = existsSync(argFile) ? readFileSync(argFile, 'utf-8') : '';
   if (invalidTierArgv.includes('--model') && invalidTierArgv.includes('claude-sonnet-5') && invalidTierOut.includes('spend_tier=standard')) {
@@ -13676,10 +13688,7 @@ try {
   // Workers must be spawned with --strict-mcp-config so they don't inherit the
   // parent session's MCP servers (e.g. Playwright) and deadlock fighting over a
   // single browser when --parallel > 1 (issue #506).
-  const claudeArgsLine = batchRunner
-    .split('\n')
-    .find(l => l.includes('claude_args=('));
-  if (claudeArgsLine && claudeArgsLine.includes('--strict-mcp-config')) {
+  if (/worker_args=\(-p[\s\S]*?--strict-mcp-config/.test(batchRunner)) {
     pass('batch workers spawn with --strict-mcp-config (no inherited MCP)');
   } else {
     fail('batch-runner.sh worker spawn missing --strict-mcp-config (issue #506 regression)');
@@ -13737,6 +13746,10 @@ try {
       role_title: 'Head of Applied AI',
       opening: 'OPENING_MARKER sentence.',
       profile_intro: 'Profile intro.',
+      achievements: [
+        { lead: 'Delivery', impact: 'Improved a production system by 20%.' },
+        { lead: 'Leadership', impact: 'Reduced operational effort by 30%.' },
+      ],
     },
   };
 
@@ -13796,6 +13809,10 @@ try {
       role_title: 'Engineer',
       opening: 'See {{FOOTNOTES_BLOCK}} and {{CLOSING_BLOCK}} markers.',
       profile_intro: 'Intro.',
+      achievements: [
+        { lead: 'Delivery', impact: 'Improved a production system by 20%.' },
+        { lead: 'Leadership', impact: 'Reduced operational effort by 30%.' },
+      ],
     },
   }, template);
 

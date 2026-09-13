@@ -56,7 +56,7 @@ const PAYLOAD = {
     location: 'Berlin, Germany',
     linkedin: { url: 'https://linkedin.com/in/janesmith', display: 'linkedin.com/in/janesmith' },
   },
-  summary: ['Platform engineer who ships verification tooling.', ...Array(430).fill('analysis')].join(' '),
+  summary: ['Platform engineer who ships verification tooling.', ...Array(500).fill('analysis')].join(' '),
   competencies: ['Platform engineering', 'Distributed systems'],
   experience: [{
     company: 'Example GmbH',

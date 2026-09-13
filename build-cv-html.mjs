@@ -33,7 +33,7 @@ import { tmpdir } from 'os';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { getCareerOpsRoot } from './path-resolver.mjs';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT = getCareerOpsRoot();
@@ -408,7 +408,7 @@ function buildProjects(entries, partial) {
         ? `\n    <div class="project-desc">${escapeHtml(descText)}</div>`
         : '';
       const tech = e.tech
-        ? `\n    <div class="project-tech">${escapeHtml(e.tech)}</div>`
+        ? `\n    <div class="project-tech">${escapeHtml(formatCvList(e.tech))}</div>`
         : '';
       return `<div class="project">
     <div class="project-title">${nameHtml}${badge}</div>${desc}${tech}
@@ -423,7 +423,7 @@ function buildProjects(entries, partial) {
     const blockValues = new Map([
       ['BADGE_BLOCK', { value: escapeHtml(e.badge || ''), present: Boolean(e.badge) }],
       ['DESC_BLOCK',  { value: escapeHtml(descText),      present: Boolean(descText) }],
-      ['TECH_BLOCK',  { value: escapeHtml(e.tech || ''),  present: Boolean(e.tech) }],
+      ['TECH_BLOCK',  { value: escapeHtml(formatCvList(e.tech)),  present: Boolean(e.tech) }],
     ]);
     const nameText = escapeHtml(e.name || '');
     const url = sanitizeUrl(e.url);
@@ -434,7 +434,7 @@ function buildProjects(entries, partial) {
       NAME:  nameHtml,
       BADGE: escapeHtml(e.badge || ''),
       DESC:  escapeHtml(descText),
-      TECH:  escapeHtml(e.tech || ''),
+      TECH:  escapeHtml(formatCvList(e.tech)),
     }, blockValues);
   }).join('\n  ');
 }
@@ -447,7 +447,7 @@ function buildEducation(entries, partial) {
         ? ` <span class="edu-org">${escapeHtml(e.org)}</span>`
         : '';
       const location = e.location
-        ? `\n    <div class="edu-location">${escapeHtml(e.location)}</div>`
+        ? `\n    <div class="edu-location">${escapeHtml(formatEducationLocation(e.location))}</div>`
         : '';
       const desc = e.description
         ? `\n    <div class="edu-desc">${escapeHtml(e.description)}</div>`
@@ -465,13 +465,13 @@ function buildEducation(entries, partial) {
   return entries.filter(e => hasRequiredFields(e, 'education', 'html')).map(e => {
     const blockValues = new Map([
       ['ORG_BLOCK',      { value: escapeHtml(e.org || ''),         present: Boolean(e.org) }],
-      ['LOCATION_BLOCK', { value: escapeHtml(e.location || ''),    present: Boolean(e.location) }],
+      ['LOCATION_BLOCK', { value: escapeHtml(formatEducationLocation(e.location)),    present: Boolean(e.location) }],
       ['DESC_BLOCK',     { value: escapeHtml(e.description || ''), present: Boolean(e.description) }],
     ]);
     return fillEntry(entryTemplate, blocks, {
       TITLE:    escapeHtml(e.title || ''),
       ORG:      escapeHtml(e.org || ''),
-      LOCATION: escapeHtml(e.location || ''),
+      LOCATION: escapeHtml(formatEducationLocation(e.location)),
       YEAR:     escapeHtml(e.year || ''),
       DESC:     escapeHtml(e.description || ''),
     }, blockValues);
@@ -684,6 +684,7 @@ function renderHtml(template, payload, templatePath, { requireTailoring = false 
   if (unresolved) {
     throw new Error(`Unresolved placeholders: ${[...new Set(unresolved)].join(', ')}`);
   }
+  validateTailoringMetadata('cv', payload, html, { required: requireTailoring });
   return html;
 }
 
@@ -795,8 +796,9 @@ async function main() {
     process.exit(1);
   }
   for (const message of warnings) console.error(`Warning: ${message}`);
+  const rules = loadDocumentRules();
   try {
-    validatePayloadLimits('cv', payload, loadDocumentRules());
+    validatePayloadLimits('cv', payload, rules);
   } catch (err) {
     console.error(err.message);
     process.exit(1);
@@ -807,6 +809,7 @@ async function main() {
   let html;
   try {
     html = renderHtml(template, payload, templatePath, { requireTailoring: tailored });
+    if (tailored) validateCvPresentation(payload, 'html', rules);
   } catch (err) {
     console.error(err.message);
     process.exit(1);

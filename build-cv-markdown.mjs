@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 import { resolveTemplate, validateTemplate } from './cv-templates.mjs';
 import { isMainModule } from './lib/is-main-module.mjs';
 
@@ -68,7 +68,7 @@ function buildContact(payload) {
 
 function buildEducation(entries = []) {
   return entries.filter((entry) => hasRequiredFields(entry, 'education', 'md')).map((entry) => {
-    const institution = [markdownText(entry.institution), markdownText(entry.location)].filter(Boolean).join(', ');
+    const institution = [markdownText(entry.institution), formatEducationLocation(entry.location)].filter(Boolean).join(', ');
     const coursework = Array.isArray(entry.coursework) && entry.coursework.length
       ? `\n\nRelevant subjects: ${entry.coursework.map(markdownText).filter(Boolean).join(', ')}`
       : '';
@@ -86,7 +86,7 @@ function buildExperience(entries = []) {
 
 function buildProjects(entries = []) {
   return entries.filter((entry) => hasRequiredFields(entry, 'projects', 'md')).map((entry) => {
-    const context = markdownText(entry.context);
+    const context = formatCvList(entry.context);
     const dates = markdownText(entry.dates);
     const meta = [context, dates].filter(Boolean).map((value) => `  : **${value}**`).join('\n');
     const repository = entry.url
@@ -102,7 +102,7 @@ function buildCertifications(entries = []) {
     const title = entry.url ? `**${markdownLink({ url: entry.url, display: entry.title })}**` : `**${markdownText(entry.title)}**`;
     const issuer = markdownText(entry.org);
     const year = markdownText(entry.year);
-    const focus = markdownText(entry.focus);
+    const focus = formatCvList(entry.focus);
     return `${title}${issuer ? `\n  : **${issuer}**` : ''}${year ? `\n  : **${year}**` : ''}${focus ? `\n\nFocus: ${focus}` : ''}`;
   }).join('\n\n');
 }
@@ -135,7 +135,8 @@ export function buildMarkdown(payload, templatePath, { requireTailoring = false 
   const { errors, warnings } = validatePayload(payload, 'md');
   if (errors.length) throw new Error(`Invalid CV payload: ${errors.join('; ')}`);
   if (warnings.length) throw new Error(`CV payload cannot be rendered safely: ${warnings.join('; ')}`);
-  validatePayloadLimits('cv', payload, loadDocumentRules());
+  const rules = loadDocumentRules();
+  validatePayloadLimits('cv', payload, rules);
   const markdown = renderTemplate(readFileSync(path, 'utf8'), {
     '{{NAME}}': markdownText(payload.name),
     '{{CONTACT_BLOCK}}': buildContact(payload),
@@ -147,6 +148,7 @@ export function buildMarkdown(payload, templatePath, { requireTailoring = false 
     '{{SKILLS}}': buildSkills(payload.skills),
   });
   validateTailoringMetadata('cv', payload, markdown, { required: requireTailoring });
+  if (requireTailoring) validateCvPresentation(payload, 'md', rules);
   return markdown;
 }
 

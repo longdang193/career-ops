@@ -21,6 +21,8 @@ import { tmpdir } from 'os';
 
 console.log('\nbuild-cv-latex --template=cjk — end-to-end CJK generation (#3554)');
 
+const FILLER = Array(450).fill('analysis').join(' ');
+
 // A realistic Chinese CV payload — name, education, experience, projects, skills
 // all carry real CJK content, not a single isolated probe string.
 const PAYLOAD = {
@@ -42,7 +44,7 @@ const PAYLOAD = {
     role: '软件工程师',
     location: 'Remote',
     dates: '2022 - Present',
-    bullets: ['设计并交付了多个内部工具，提升团队效率 20%', '记录发布检查并支持团队复用。', '改进流程可追踪性和交付稳定性。'],
+    bullets: [`设计并交付了多个内部工具，提升团队效率 20% ${FILLER}`, '记录发布检查并支持团队复用。', '改进流程可追踪性和交付稳定性。'],
   }],
   projects: [{
     name: '示例项目',

@@ -185,6 +185,7 @@ test('visible word validation strips document markup and enforces configured ran
   assert.equal(countVisibleWords('<style>.foo { color: red; }</style><p>one two</p>'), 2);
   assert.equal(countVisibleWords('\\href{https://example.test/a-long-url}{Visible label}'), 2);
   assert.equal(countVisibleWords('\\documentclass{article}% hidden preamble\n\\begin{document}one two\\end{document}', 'tex'), 2);
+  assert.equal(countVisibleWords(String.raw`\begin{document}budget 99.9\% uptime analysis\end{document}`, 'tex'), 4);
   const rules = validateDocumentRules(PROFILE);
   assert.doesNotThrow(() => validateRenderedWordCount('cv', '<p>' + 'word '.repeat(530) + '</p>', rules));
   assert.throws(() => validateRenderedWordCount('cv', 'word '.repeat(631), rules), /maximum is 630/);

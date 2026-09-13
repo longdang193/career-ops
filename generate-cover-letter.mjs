@@ -22,9 +22,10 @@ import { assertFacts } from "./verify-cv-facts.mjs";
 import { getTemplateContract, resolveTemplate } from "./cv-templates.mjs";
 import { countVisibleWords, loadDocumentRules, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from "./lib/document-rules.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { getCareerOpsRoot } from "./path-resolver.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUTPUT_ROOT = resolve(__dirname, "output");
+const OUTPUT_ROOT = resolve(getCareerOpsRoot(), "output");
 
 /**
  * Resolve a requested cover-letter output path.

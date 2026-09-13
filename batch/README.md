@@ -18,8 +18,8 @@ uses Claude. Override with `--provider openai` or `--provider claude`.
 
 `job_url` is the preferred URL field, with `raw_job.jobUrl` as fallback.
 `raw_job.companyName`, `raw_job.title`, and `raw_job.location` provide batch
-notes. `descriptionHtml` and `enriched_job` are ignored. If
-`raw_job.description` is empty, the runner keeps its existing URL-fetch
+notes. `descriptionHtml` and `enriched_job` are ignored. Missing or blank
+`raw_job.description` fails before processing; JSONL mode has no URL-fetch
 fallback.
 
 1. **Add offers** to `batch-input.tsv` (tab-separated: `id`, `url`, `source`, `notes`):
@@ -48,7 +48,7 @@ fallback.
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--jsonl PATH` | off | Read captured job records and local JDs from JSONL; skips URL retrieval when `raw_job.description` exists |
+| `--jsonl PATH` | off | Read captured job records and local JDs from JSONL; rejects blank descriptions and skips URL retrieval |
 | `--parallel N` | `1` | Number of concurrent headless workers |
 | `--dry-run` | off | Preview pending offers without processing |
 | `--retry-failed` | off | Only retry offers marked as `failed` in state |

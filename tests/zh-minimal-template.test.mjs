@@ -39,7 +39,7 @@ test('Chinese Minimal renders a complete mixed-language payload', () => {
       summary: '个人简介', competencies: '核心能力', experience: '工作经历',
       projects: '精选项目', education: '教育经历', certifications: '认证', skills: '技术栈',
     },
-    summary: ['全栈工程师，负责 AI Agent 工作流与生产部署。', ...Array(430).fill('analysis')].join(' '),
+    summary: ['全栈工程师，负责 AI Agent 工作流与生产部署。', ...Array(530).fill('analysis')].join(' '),
     competencies: ['AI Agent 工作流', '后端 API 工程', '生产部署'],
     experience: [{
       company: '示例科技有限公司', role: '全栈开发工程师', dates: '2025.01 至今',
@@ -79,7 +79,7 @@ test('Chinese Minimal keeps long mixed-language contacts inside the A4 page', {
       location: '中国｜杭州',
       portfolio: 'https://example.com/一个很长的中英文混合项目地址/remote-agent-production-delivery',
     },
-    summary: ['全栈工程师，负责 AI Agent 工作流与生产部署。', ...Array(430).fill('analysis')].join(' '),
+    summary: ['全栈工程师，负责 AI Agent 工作流与生产部署。', ...Array(530).fill('analysis')].join(' '),
     competencies: ['AI Agent 工作流'],
     experience: [{ company: '示例科技有限公司', role: '工程师', dates: '2025 至今', bullets: ['交付生产系统。', '记录发布检查。', '改进交付稳定性。'] }],
     projects: [], education: [], certifications: [], skills: [],

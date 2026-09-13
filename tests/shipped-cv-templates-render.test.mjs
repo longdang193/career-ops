@@ -28,7 +28,7 @@ writeFileSync(input, JSON.stringify({
     },
     location: 'Berlin, Germany',
   },
-  summary: ['Platform engineer who ships verification tooling.', ...Array(430).fill('analysis')].join(' '),
+  summary: ['Platform engineer who ships verification tooling.', ...Array(500).fill('analysis')].join(' '),
   competencies: ['Platform engineering', 'Distributed systems'],
   experience: [{
     company: 'Example GmbH',

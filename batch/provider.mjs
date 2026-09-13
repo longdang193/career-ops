@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import dotenv from 'dotenv';
+import { isMainModule } from '../lib/is-main-module.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -18,7 +19,7 @@ export function resolveBatchProvider(requested = 'auto', env = process.env, envP
     .some((key) => String(settings[key] || '').trim()) ? 'openai' : 'claude';
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   try {
     console.log(resolveBatchProvider(process.argv[2], process.env, process.argv[3]));
   } catch (error) {

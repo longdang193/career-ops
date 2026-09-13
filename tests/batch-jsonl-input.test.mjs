@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { delimiter, join } from 'path';
 import { fail, getBash, pass, ROOT, toBashPath } from './helpers.mjs';
@@ -21,7 +21,12 @@ function fixtureRoot() {
   mkdirSync(join(root, 'bin'), { recursive: true });
   mkdirSync(join(root, 'data'), { recursive: true });
   mkdirSync(join(root, 'reports'), { recursive: true });
+  mkdirSync(join(root, 'lib'), { recursive: true });
+  mkdirSync(join(root, 'node_modules'), { recursive: true });
   writeFileSync(join(root, 'batch', 'batch-runner.sh'), readFileSync(join(ROOT, 'batch', 'batch-runner.sh')));
+  writeFileSync(join(root, 'batch', 'provider.mjs'), readFileSync(join(ROOT, 'batch', 'provider.mjs')));
+  writeFileSync(join(root, 'lib', 'is-main-module.mjs'), readFileSync(join(ROOT, 'lib', 'is-main-module.mjs')));
+  cpSync(join(ROOT, 'node_modules', 'dotenv'), join(root, 'node_modules', 'dotenv'), { recursive: true });
   writeFileSync(join(root, 'batch', 'batch-prompt.md'), 'URL={{URL}}\nJD={{JD_FILE}}\nREPORT={{REPORT_NUM}}\n');
   writeFileSync(join(root, 'merge-tracker.mjs'), '');
   writeFileSync(join(root, 'reconcile-pipeline.mjs'), '');
@@ -48,7 +53,11 @@ try {
       },
     })}\n`);
     const binPath = process.platform === 'win32' ? toBashPath(join(root, 'bin')) : join(root, 'bin');
-    const env = { ...process.env, PATH: `${binPath}${process.platform === 'win32' ? ':' : delimiter}${process.env.PATH}` };
+    const env = {
+      ...process.env,
+      CAREER_OPS_BATCH_PROVIDER: 'claude',
+      PATH: `${binPath}${process.platform === 'win32' ? ':' : delimiter}${process.env.PATH}`,
+    };
     const result = runBatch(['--jsonl', input, '--dry-run'], root, env);
     if (result.status === 0 && result.stdout.includes('4458080466') && !result.stdout.includes('Unknown option: --jsonl')) {
       pass('JSONL dry-run accepts captured input');
@@ -81,6 +90,16 @@ try {
     const missingUrlResult = runBatch(['--jsonl', toBashPath(missingUrl), '--dry-run'], root, env);
     if (missingUrlResult.status !== 0) pass('JSONL without URL fails before processing');
     else fail('JSONL without URL unexpectedly succeeded');
+
+    const missingDescription = join(root, 'missing-description.jsonl');
+    writeFileSync(missingDescription, `${JSON.stringify({
+      schema_version: 'rerun_input.v1',
+      job_url: 'https://example.com/jobs/8',
+      raw_job: { id: '8', description: '   ' },
+    })}\n`);
+    const missingDescriptionResult = runBatch(['--jsonl', toBashPath(missingDescription), '--dry-run'], root, env);
+    if (missingDescriptionResult.status !== 0) pass('JSONL without raw_job.description fails before processing');
+    else fail('JSONL without raw_job.description unexpectedly succeeded');
 
     if (!existsSync(join(root, 'batch', 'batch-input.tsv'))) pass('JSONL dry-run creates no persistent TSV');
     else fail('JSONL dry-run created persistent TSV');
@@ -131,6 +150,7 @@ try {
       '  jd_file="$(sed -n \'s/^JD=//p\' "$prompt_file")"',
       '  report_num="$(sed -n \'s/^REPORT=//p\' "$prompt_file")"',
       '  root="$(cd "$(dirname "$prompt_file")/.." && pwd)"',
+      '  cp "$prompt_file" "$root/resolved-prompt.md"',
       '  cat "$jd_file" > "$root/captured-jd.txt"',
       '  printf "# fixture report\\n" > "$root/reports/${report_num}-fixture.md"',
       '  printf "```json\\n{\\"status\\":\\"completed\\",\\"score\\":4.0}\\n```\\n"',
@@ -144,6 +164,11 @@ try {
     else fail(`worker did not receive exact captured JD: status=${workerResult.status} stdout=${workerResult.stdout} stderr=${workerResult.stderr}`);
     if (!existsSync(curlMarker)) pass('captured JD skips curl prefetch');
     else fail('captured JD still invoked curl');
+    if (readFileSync(join(root, 'resolved-prompt.md'), 'utf-8').includes('Never fetch, retrieve, or open the job URL')) {
+      pass('captured JD prompt disables URL retrieval');
+    } else {
+      fail('captured JD prompt omitted URL retrieval prohibition');
+    }
 
     writeFileSync(join(root, 'batch', 'batch-input.tsv'), 'id\turl\tsource\tnotes\n7\thttps://example.com/legacy\tfixture\tlegacy\n');
     const legacyResult = runBatch(['--dry-run'], root, env);
