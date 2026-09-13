@@ -9,7 +9,7 @@ import { escapeLatex, sanitizeUrl } from './lib/latex-escape.mjs';
 import { resolveTemplate } from './cv-templates.mjs';
 import { stripEmptySections } from './cv-sections-core.mjs';
 import { hasRequiredFields, hasText, validatePayload } from './lib/cv-payload-schema.mjs';
-import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationInstitution, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(__dirname, 'templates', 'cv-template.tex');
@@ -64,7 +64,7 @@ function buildEducation(entries) {
   const blocks = [];
   for (const e of entries) {
     if (!hasRequiredFields(e, 'education', 'tex')) continue;
-    let block = `    \\resumeSubheading\n      {${escapeLatex(e.institution)}}{${escapeLatex(formatEducationLocation(e.location))}}\n      {${escapeLatex(e.degree)}}{${escapeLatex(e.dates)}}`;
+    let block = `    \\resumeSubheading\n      {${escapeLatex(formatEducationInstitution(e.institution, e.location))}}{${escapeLatex(formatEducationLocation(e.location))}}\n      {${escapeLatex(e.degree)}}{${escapeLatex(e.dates)}}`;
     if (Array.isArray(e.coursework) && e.coursework.length > 0) {
       const courses = e.coursework.map(c => escapeLatexBullet(c)).join(', ');
       block += `\n        \\resumeItemListStart\n            \\resumeItem{\\textbf{Coursework:} ${courses}}\n        \\resumeItemListEnd`;

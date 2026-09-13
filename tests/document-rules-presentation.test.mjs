@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateCvPresentation } from '../lib/document-rules.mjs';
+import { formatEducationInstitution, validateCvPresentation } from '../lib/document-rules.mjs';
 
 const rules = {
   cv: {
@@ -33,6 +33,11 @@ function payload(overrides = {}) {
 
 test('tailored CV presentation policy accepts bounded, non-overlapping payload', () => {
   assert.doesNotThrow(() => validateCvPresentation(payload(), 'md', rules));
+});
+
+test('country-only education formatting removes city suffix from institution names', () => {
+  assert.equal(formatEducationInstitution('Otto von Guericke University Magdeburg', 'Magdeburg, Germany', rules), 'Otto von Guericke University');
+  assert.equal(formatEducationInstitution('Foreign Trade University', 'Hanoi, Vietnam', rules), 'Foreign Trade University');
 });
 
 test('tailored CV presentation policy rejects one-item certificate focus', () => {

@@ -101,6 +101,13 @@ try {
     fail(`ordinary prose was extracted as a tool: ${JSON.stringify({ proseTools, contextualTool })}`);
   }
 
+  const proseResearchInputs = factClaims('I translated research inputs into concise recommendations.');
+  if (proseResearchInputs.length === 0) {
+    pass('generic research inputs are not treated as a tool claim');
+  } else {
+    fail(`generic research wording was extracted as a tool: ${JSON.stringify(proseResearchInputs)}`);
+  }
+
   const proseTitle = factClaims('The company was recognized as a Top Employer.');
   if (!proseTitle.some(claim => claim.kind === 'title')) {
     pass('ordinary as prose is not treated as a title claim');

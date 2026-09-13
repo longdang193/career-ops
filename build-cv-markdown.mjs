@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { hasRequiredFields, validatePayload } from './lib/cv-payload-schema.mjs';
-import { formatCvList, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
+import { formatCvList, formatEducationInstitution, formatEducationLocation, loadDocumentRules, validateCvPresentation, validatePayloadLimits, validateRenderedWordCount, validateTailoringMetadata } from './lib/document-rules.mjs';
 import { resolveTemplate, validateTemplate } from './cv-templates.mjs';
 import { isMainModule } from './lib/is-main-module.mjs';
 
@@ -68,7 +68,7 @@ function buildContact(payload) {
 
 function buildEducation(entries = []) {
   return entries.filter((entry) => hasRequiredFields(entry, 'education', 'md')).map((entry) => {
-    const institution = [markdownText(entry.institution), formatEducationLocation(entry.location)].filter(Boolean).join(', ');
+    const institution = [formatEducationInstitution(entry.institution, entry.location), formatEducationLocation(entry.location)].filter(Boolean).join(', ');
     const coursework = Array.isArray(entry.coursework) && entry.coursework.length
       ? `\n\nRelevant subjects: ${entry.coursework.map(markdownText).filter(Boolean).join(', ')}`
       : '';

@@ -280,6 +280,14 @@ ${groups}
 </section>`;
 }
 
+function reverseTimelineEvidence(letter) {
+  if (Array.isArray(letter?.experience) && letter.experience.length) return letter.experience;
+  return (letter?.achievements || []).map((entry) => ({
+    title: entry.title || entry.lead || '',
+    bullets: entry.bullets || [entry.text || entry.impact].filter(Boolean),
+  }));
+}
+
 function buildReverseContributionBlock(contribution) {
   const normalized = normalizeTimelineBlock(contribution);
   const bullets = Array.isArray(contribution?.bullets) ? contribution.bullets : [];
@@ -315,7 +323,9 @@ function validateTimelinePayload(source, letter) {
 }
 
 function evidenceItems(letter = {}) {
-  return Array.isArray(letter.experience) ? letter.experience : (letter.achievements || []);
+  return Array.isArray(letter.experience) && letter.experience.length
+    ? letter.experience
+    : (letter.achievements || []);
 }
 
 function validateEvidenceCount(achievements, hasEvidenceSlot = true) {
@@ -448,7 +458,7 @@ function buildReplacements(payload) {
     "{{ATTENTION_BLOCK}}": buildTimelineSection("WHAT CAUGHT MY ATTENTION", letter.attention),
     "{{CHALLENGE_BLOCK}}": buildTimelineSection("THE CHALLENGE", letter.challenge),
     "{{PERSPECTIVE_BLOCK}}": buildTimelineSection("MY PERSPECTIVE", letter.perspective, { focus: true }),
-    "{{RELEVANT_EXPERIENCE_BLOCK}}": buildReverseExperienceBlock(letter.experience),
+    "{{RELEVANT_EXPERIENCE_BLOCK}}": buildReverseExperienceBlock(reverseTimelineEvidence(letter)),
     "{{CONTRIBUTION_BLOCK}}": buildReverseContributionBlock(letter.contribution),
     "{{PROBLEMS_BLOCK}}": problemsBlock,
     "{{CLOSING_BLOCK}}": closingBlock,

@@ -117,6 +117,32 @@ test('reverse timeline template renders structured sections and experience branc
   assert.doesNotMatch(markdown, /\{\{[A-Z_]+\}\}/);
 });
 
+test('reverse timeline falls back to achievements when experience is empty', () => {
+  const template = fileURLToPath(new URL('../templates/cover-letter-template.reverse-timeline.md', import.meta.url));
+  const markdown = buildMarkdown({
+    candidate: { name: 'Example Candidate' },
+    letter: {
+      role_title: 'Working Student Analyst',
+      company: 'Probe Analytics GmbH',
+      greeting: 'Dear recruitment team,',
+      opening: 'I connect evidence with decisions.',
+      profile_intro: 'My background combines research and reporting.',
+      attention: 'Structured analysis fits this role.',
+      challenge: 'The work requires clear evidence.',
+      perspective: 'I work carefully with documented inputs.',
+      experience: [],
+      achievements: [
+        { lead: 'Research experience', impact: 'I prepared evidence for business decisions.' },
+        { lead: 'Reporting experience', impact: 'I prepared clear reporting for stakeholders.' },
+      ],
+      contribution: { title: 'Contribution', bullets: ['Support reporting and analysis.'] },
+      closing: 'Thank you for considering my application.',
+      signature: { valediction: 'Kind regards,', name: 'Example Candidate' },
+    },
+  }, template);
+  assert.match(markdown, /<h3 class="branch-title">Research experience<\/h3>[\s\S]*I prepared evidence for business decisions/);
+});
+
 test('reverse timeline rejects sentence fragments in timeline copy', () => {
   const template = fileURLToPath(new URL('../templates/cover-letter-template.reverse-timeline.md', import.meta.url));
   const payload = {

@@ -24,7 +24,8 @@ const TOOL_PROSE_WORDS = new Set([
   'a', 'an', 'and', 'at', 'built', 'by', 'containerized', 'deployment',
   'deployments', 'delivery', 'diagnosing', 'efficiency', 'feedback', 'for', 'from', 'improve',
   'improving', 'in', 'of', 'on', 'on-time', 'operations', 'production', 'project',
-  'recurring', 'resolving', 'submission', 'team', 'the', 'to', 'using', 'with',
+  'recurring', 'research', 'resolving', 'submission', 'team', 'the', 'to', 'using', 'with',
+  'inputs',
 ]);
 const TOOL_PHRASE_PATTERN = /^(?=.{1,80}$)[\p{L}\p{N}.][\p{L}\p{N}+#./-]*(?:\s+[\p{L}\p{N}.][\p{L}\p{N}+#./-]*){0,2}$/u;
 const DELEGATED_PARTY_RE = /\b(?:vendors?|agenc(?:y|ies)|contractors?|consultanc(?:y|ies)|consultants?|external teams?|outsourc(?:ed|ing)|implementation partners?)\b/i;
