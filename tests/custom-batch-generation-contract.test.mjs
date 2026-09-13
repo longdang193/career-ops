@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const customRules = readFileSync(new URL('../modes/_custom.md', import.meta.url), 'utf8');
+const customRules = readFileSync(new URL('../modes/_custom.template.md', import.meta.url), 'utf8');
 
 test('custom batch generation contract keeps one symmetric job report schema', () => {
   for (const field of [
