@@ -1,0 +1,1128 @@
+name: LONG DANG
+headline: Data Analyst | SQL, Excel, Python, Power BI, Reporting & Data Visualization
+summary: Data and analytics candidate with four years of experience in market and consumer research, commercial
+  and product analysis, performance reporting, and stakeholder communication. Professional experience in Excel-based
+  analysis, recurring reporting, market intelligence, consumer research, and data-driven decision support, complemented
+  by project and academic work in SQL, Python, Power BI, Power Query, analytics engineering, data modeling, machine
+  learning, and operations research. Built projects in ecommerce analytics, Azure Machine Learning churn prediction,
+  and AI-assisted job matching and CV generation. Seeking data analyst, business intelligence, reporting, commercial
+  analytics, or analytics engineering roles.
+contact:
+  email: longdanghoangphi@gmail.com
+  phone: (+49) 15560 668152
+  location: Germany
+  linkedin: https://www.linkedin.com/in/longdhp/
+  github: https://github.com/longdang193
+  website: []
+experiences:
+- id: exp_kokuyo_vn_2021_2023
+  role: R&D Staff
+  role_family: research and development
+  company: KOKUYO Vietnam Trading
+  company_url: ''
+  location: Vietnam
+  start: 2021-09
+  end: 2023-09
+  current: false
+  domain_tags:
+  - stationery
+  - b2b
+  - b2c
+  - consumer goods
+  responsibility_themes:
+  - market research
+  - consumer research
+  - new product development
+  - cross-functional collaboration
+  - product commercialization
+  - category growth
+  bullets:
+  - text: Managed end-to-end new product development from market research and concept validation to packaging, pre-production
+      QA, sales training, launch planning, and post-launch performance review.
+    skills:
+    - new product development
+    - market research
+    - quality assurance
+    - sales enablement
+    - concept validation
+    - packaging development
+    - launch planning
+  - text: Conducted data-driven market research using trend analysis, competitor benchmarking, customer insights,
+      distributor feedback, and sales data to identify unmet needs and prioritize product opportunities.
+    skills:
+    - data analysis
+    - market research
+    - competitive analysis
+    - customer insights
+    - portfolio prioritization
+    - microsoft excel
+    - reporting
+  - text: Prepared recurring analysis and reporting materials in Excel and PowerPoint to communicate findings, product
+      performance, and launch recommendations to cross-functional stakeholders.
+    skills:
+    - microsoft excel
+    - microsoft powerpoint
+    - reporting
+    - stakeholder communication
+    - performance reporting
+  - text: Conducted consumer research for newly developed products using focus group discussions, design validation,
+      market testing, and mystery shopping to evaluate customer preferences and refine product concepts before launch.
+    skills:
+    - consumer research
+    - focus group discussions
+    - design validation
+    - market testing
+    - mystery shopping
+    - concept validation
+    - customer insights
+  - text: Collaborated with KOKUYO teams in Japan, China, and Malaysia to improve cross-functional coordination
+      and support a more standardized NPD process.
+    skills:
+    - cross-functional collaboration
+    - stakeholder management
+    - process standardization
+  - text: Developed and launched 38 SKUs in stationery categories including sketchbooks, correction tapes, backpacks,
+      and test papers, expanding the portfolio and supporting category revenue growth.
+    skills:
+    - new product development
+    - product launch
+    - portfolio expansion
+    - product commercialization
+    - category growth
+  - text: Led sketchbook design initiative from 2022 that strengthened USP and helped the category become one of
+      the top-selling non-notebook stationery lines and a top-5 revenue contributor among newly developed categories
+      in 2022.
+    skills:
+    - new product development
+    - product strategy
+    - design direction
+    - category growth
+  - text: Managed backpack category development, ranking top-4 by revenue contribution among newly developed categories
+      in 2022 and becoming the highest-performing entirely new product line in the portfolio.
+    skills:
+    - new product development
+    - category management
+    - go-to-market strategy
+    - revenue growth
+    - portfolio management
+  - text: Supported SOP development to streamline workflows across ideation, NPD, pre-production quality assessment,
+      and interdepartmental coordination.
+    skills:
+    - sop development
+    - process improvement
+    - pre-production quality assurance
+    - workflow standardization
+    - cross-functional coordination
+- id: exp_longhung_pushmax_2019_2021
+  role: Brand Marketing Executive
+  role_family: marketing
+  company: Long Hung ITS
+  company_url: ''
+  location: Vietnam
+  start: 2019-06
+  end: 2021-06
+  current: false
+  domain_tags:
+  - food and beverage
+  - beverages
+  - consumer goods
+  responsibility_themes:
+  - market research
+  - campaign analytics
+  - product validation
+  - media optimization
+  bullets:
+  - text: Conducted brand and product audits by integrating sales data, fieldwork findings, retail audit, brand
+      health tracking, consumer panel data, and industry reports to evaluate portfolio performance and identify
+      growth opportunities.
+    skills:
+    - brand analysis
+    - product analysis
+    - sales analysis
+    - market intelligence
+    - portfolio analysis
+    - brand health tracking
+    - consumer panel analysis
+  - text: Designed and executed research studies including focus group discussions, sensory testing, simulated test
+      markets, and mystery shopping to assess consumer preferences, validate concepts, and support launch decisions
+      for juice, tea, and energy drink products.
+    skills:
+    - consumer research
+    - focus group discussions
+    - sensory testing
+    - concept testing
+    - mystery shopping
+    - concept validation
+  - text: Planned and evaluated Pushmax Tet media campaigns using Buzzmetrics, Google Brand Lift, and Decisions
+      Lab Audience Report to analyze reach, segmentation, brand lift, and communication effectiveness for media
+      optimization.
+    skills:
+    - campaign analytics
+    - media planning
+    - brand lift analysis
+    - audience segmentation
+    - media optimization
+    - social listening
+    - audience insights
+    - microsoft excel
+    - reporting
+  - text: Built structured reporting and presentation materials with Excel and PowerPoint to summarize campaign
+      performance, consumer insights, and recommendations for stakeholders.
+    skills:
+    - microsoft excel
+    - microsoft powerpoint
+    - performance reporting
+    - stakeholder communication
+  - text: Contributed to 'Fortune follows home with Pushmax passion fruit juice drink' campaign, recognized as a
+      top-5 F&B social marketing campaign and top-2 music marketing campaign during Tet 2020 (Buzzmetrics report,
+      2019-10-25 to 2020-01-25).
+    skills:
+    - integrated campaign management
+    - social media marketing
+    - music marketing
+    - performance reporting
+education:
+- id: edu_ftu_international_business
+  degree: Bachelor's Degree
+  field: International Business
+  institution: Foreign Trade University
+  location: Hanoi, Vietnam
+  start: 2015-09
+  end: 2019-09
+  thesis:
+    title: The Impact of Marketing Activities at Supermarket Points of Sale (POS) on Purchase Intentions of Customers
+      in the Beverage Industry in Vietnam
+    summary: >
+      Conducted research on how supermarket point-of-sale marketing activities influence customer purchase intentions
+      in Vietnam's beverage industry. Developed hypotheses around four POS marketing factors, collected data through
+      interviews and surveys, analyzed the results using SPSS, and provided recommendations based on the impact
+      level of each factor on purchase intentions.
+  courses:
+  - Supply Chain Management
+  - Strategic Management
+  - International Marketing
+  - International Project Management
+  activities: []
+- id: edu_ovgu_orba
+  degree: Master of Science
+  field: Operations Research and Business Analytics
+  institution: Otto von Guericke University Magdeburg
+  location: Magdeburg, Germany
+  start: 2024-10
+  end: Present
+  gpa: 1.7 (German scale; 1.0 = best)
+  courses:
+  - AI-based Decision Support I
+  - AI-based Decision Support II
+  - Fundamentals of Artificial Intelligence in Production and Logistics
+  - Machine Learning
+  - Databases I
+  - Data Mining
+  - Optimization Implementation in Production & Transportation
+  - Simulation in Production and Logistics
+  - Financial Engineering
+  - Computational Transportation
+  - Introduction to Computer Science for Engineers
+  - Business Decision Making
+  - Production Planning and Scheduling
+  activities: []
+skills:
+- name: sql
+  level: intermediate
+  years: 2
+  category: programming
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - edu_ovgu_orba
+  sub_skills:
+  - data querying
+  - transformation logic
+  - analytical datasets
+  - business reporting logic
+- name: microsoft excel
+  level: advanced
+  years: 4
+  category: reporting and analysis tools
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  - edu_ovgu_orba
+  sub_skills:
+  - data analysis
+  - reporting
+  - dashboard support
+  - lookup formulas
+  - pivot tables
+- name: microsoft power bi
+  level: beginner
+  years: 1
+  category: business intelligence tools
+  evidence_refs:
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - report development
+  - dashboard development
+  - data visualization
+  - data connections
+  - power bi service
+- name: power query
+  level: beginner
+  years: 1
+  category: reporting and analysis tools
+  evidence_refs:
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - data cleaning
+  - data transformation
+  - report preparation
+  - power query editor
+  - table joins and appends
+  - pivoting and unpivoting
+  - m language
+- name: python
+  level: intermediate
+  years: 1
+  category: programming
+  evidence_refs:
+  - proj_fitcv
+  - proj_customer_churn_azureml
+  - proj_project_os_starter
+  sub_skills:
+  - data processing
+  - analysis scripting
+  - workflow automation
+  - api integration
+- name: dax
+  level: beginner
+  years: 1
+  category: reporting and analysis tools
+  evidence_refs:
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - measures
+  - calculated columns
+  - dax functions
+  - analytical calculations
+- name: microsoft powerpoint
+  level: intermediate
+  years: 4
+  category: reporting and communication tools
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - presentation building
+  - stakeholder reporting
+  - insight communication
+- name: data analysis
+  level: advanced
+  years: 4
+  category: analytics
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - trend analysis
+  - sales analysis
+  - performance reporting
+  - insight generation
+  - decision support
+- name: business intelligence
+  level: intermediate
+  years: 1
+  category: analytics
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - metric interpretation
+  - business-facing datasets
+  - reporting logic
+  - semantic data access
+- name: reporting
+  level: advanced
+  years: 4
+  category: reporting and analysis tools
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - performance reporting
+  - recurring reporting
+  - stakeholder reporting
+  - report preparation
+  - power bi reporting
+  - interactive reports
+  - report design
+- name: data visualization
+  level: intermediate
+  years: 4
+  category: reporting and analysis tools
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  - proj_ecommerce_analytics_bruin
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - report visualization
+  - dashboard visualization
+  - chart development
+  - insight communication
+  - power bi visualizations
+  - report design
+  - interactive visual analysis
+- name: dashboard development
+  level: beginner
+  years: 1
+  category: reporting and analysis tools
+  evidence_refs:
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - dashboard design
+  - interactive reporting
+  - metric visualization
+  - business-facing dashboards
+- name: data cleaning
+  level: intermediate
+  years: 2
+  category: data preparation
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - data quality checks
+  - missing-value handling
+  - data standardization
+  - report preparation
+- name: data transformation
+  level: intermediate
+  years: 2
+  category: data preparation
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - power query transformations
+  - sql transformations
+  - structured transformations
+  - analytics-ready datasets
+- name: data modeling
+  level: intermediate
+  years: 1
+  category: data engineering and analytics engineering
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - proj_fitcv
+  - cert_datacamp_data_analyst_power_bi_2026
+  sub_skills:
+  - analytics-ready schema design
+  - business-facing models
+  - structured transformations
+  - metric organization
+  - power bi data modeling
+  - table relationships
+  - analytical model design
+- name: data quality
+  level: intermediate
+  years: 1
+  category: quality and reliability
+  evidence_refs:
+  - proj_fitcv
+  - proj_customer_churn_azureml
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - data validation
+  - quality checks
+  - quality gates
+  - data quality monitoring
+- name: statistical analysis
+  level: intermediate
+  years: 1
+  category: analytics
+  evidence_refs:
+  - edu_ftu_international_business
+  - edu_ovgu_orba
+  - proj_customer_churn_azureml
+  sub_skills:
+  - research data analysis
+  - hypothesis evaluation
+  - model evaluation
+  - result interpretation
+- name: performance analysis
+  level: intermediate
+  years: 4
+  category: analytics
+  evidence_refs:
+  - exp_longhung_pushmax_2019_2021
+  - exp_kokuyo_vn_2021_2023
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - campaign performance
+  - product performance
+  - category performance
+- name: market research
+  level: advanced
+  years: 4
+  category: research and insights
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - competitor benchmarking
+  - trend analysis
+  - customer insights
+  - opportunity identification
+- name: consumer research
+  level: intermediate
+  years: 4
+  category: research and insights
+  evidence_refs:
+  - exp_longhung_pushmax_2019_2021
+  - exp_kokuyo_vn_2021_2023
+  sub_skills:
+  - focus group discussions
+  - sensory testing
+  - mystery shopping
+  - customer insights
+  - consumer preference analysis
+- name: competitive analysis
+  level: intermediate
+  years: 4
+  category: research and insights
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - benchmarking
+  - market scanning
+  - portfolio comparison
+- name: product and commercial analysis
+  level: advanced
+  years: 4
+  category: business and product
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - portfolio analysis
+  - category performance
+  - launch evaluation
+  - growth opportunity identification
+- name: campaign analytics
+  level: intermediate
+  years: 2
+  category: marketing analytics
+  evidence_refs:
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - brand lift analysis
+  - audience segmentation
+  - media effectiveness
+  - performance reporting
+- name: audience segmentation
+  level: intermediate
+  years: 2
+  category: marketing analytics
+  evidence_refs:
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - target audience analysis
+  - campaign audience review
+  - insight interpretation
+- name: stakeholder communication
+  level: advanced
+  years: 4
+  category: collaboration and execution
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - presentation of findings
+  - insight communication
+  - recommendation communication
+  - cross-functional reporting
+- name: cross-functional collaboration
+  level: advanced
+  years: 4
+  category: collaboration and execution
+  evidence_refs:
+  - exp_kokuyo_vn_2021_2023
+  - exp_longhung_pushmax_2019_2021
+  sub_skills:
+  - regional coordination
+  - cross-team workflow support
+  - project alignment
+- name: workflow automation
+  level: intermediate
+  years: 1
+  category: automation and process design
+  evidence_refs:
+  - proj_fitcv
+  - proj_ecommerce_analytics_bruin
+  - proj_project_os_starter
+  sub_skills:
+  - staged workflow design
+  - repeatable execution
+  - checkpoint design
+  - process standardization
+- name: google bigquery
+  level: beginner
+  years: 1
+  category: data platforms
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - warehouse-based analytics
+  - analytical transformations
+  - dataset management
+  - query execution
+- name: git
+  level: intermediate
+  years: 1
+  category: development tools
+  evidence_refs:
+  - proj_fitcv
+  - proj_customer_churn_azureml
+  - proj_ecommerce_analytics_bruin
+  - cert_datacamp_git_fundamentals_2026
+  - proj_project_os_starter
+  sub_skills:
+  - version control
+  - branching
+  - remote repositories
+  - merge conflict resolution
+- name: github
+  level: intermediate
+  years: 1
+  category: development tools
+  evidence_refs:
+  - proj_fitcv
+  - proj_customer_churn_azureml
+  - proj_ecommerce_analytics_bruin
+  - proj_project_os_starter
+  sub_skills:
+  - repository management
+  - project documentation
+  - source code publishing
+- name: docker
+  level: beginner
+  years: 1
+  category: cloud and infrastructure
+  evidence_refs:
+  - proj_customer_churn_azureml
+  sub_skills:
+  - containerized project environments
+  - environment consistency
+  - reproducible setup
+- name: machine learning
+  level: intermediate
+  years: 1
+  category: machine learning and ai
+  evidence_refs:
+  - proj_customer_churn_azureml
+  - cert_ml_zoomcamp_2026
+  - edu_ovgu_orba
+  sub_skills:
+  - supervised learning
+  - model evaluation
+  - hyperparameter tuning
+  - churn prediction
+- name: ai agent orchestration
+  level: intermediate
+  category: machine learning and ai
+  evidence_refs:
+  - proj_fitcv
+  - proj_project_os_starter
+  sub_skills:
+  - multi-agent orchestration
+  - agent delegation
+  - tool-using agents
+  - human-in-the-loop workflows
+  - verification-driven agent workflows
+  - agent runtime governance
+  years: 1
+- name: llm application development
+  level: intermediate
+  category: machine learning and ai
+  evidence_refs:
+  - proj_fitcv
+  sub_skills:
+  - structured llm outputs
+  - provider routing
+  - prompt contracts
+  - response validation
+  - failure handling
+  - runtime provenance
+  years: 1
+- name: ai-assisted software development
+  level: intermediate
+  category: development tools
+  evidence_refs:
+  - proj_fitcv
+  - proj_project_os_starter
+  sub_skills:
+  - ai coding agents
+  - prompt-driven implementation
+  - delegated development workflows
+  - automated testing
+  - independent code review
+  - release verification
+  years: 1
+- name: azure machine learning
+  level: intermediate
+  years: 1
+  category: cloud and infrastructure
+  evidence_refs:
+  - proj_customer_churn_azureml
+  - cert_azure_ai_engineer_associate
+  sub_skills:
+  - azure ml sdk v2
+  - managed online endpoints
+  - training pipelines
+  - model promotion flow
+- name: operations research
+  level: intermediate
+  category: analytics
+  evidence_refs:
+  - edu_ovgu_orba
+  - proj_fitcv
+  sub_skills:
+  - inverse optimization
+  - preference learning
+  - ranking policy optimization
+  - decision support
+  - optimization modeling
+  years: 2
+- name: fastapi
+  level: intermediate
+  years: 1
+  category: development tools
+  evidence_refs:
+  - proj_fitcv
+  sub_skills:
+  - api development
+  - request validation
+  - application routing
+  - backend services
+- name: sqlite
+  level: intermediate
+  years: 1
+  category: data platforms
+  evidence_refs:
+  - proj_fitcv
+  sub_skills:
+  - relational persistence
+  - schema design
+  - transactional workflows
+  - local application storage
+- name: github actions
+  level: intermediate
+  years: 1
+  category: development tools
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - proj_project_os_starter
+  sub_skills:
+  - ci workflows
+  - scheduled pipeline execution
+  - validation automation
+  - repository automation
+- name: pytest
+  level: intermediate
+  years: 1
+  category: development tools
+  evidence_refs:
+  - proj_fitcv
+  - proj_customer_churn_azureml
+  - proj_project_os_starter
+  sub_skills:
+  - unit testing
+  - integration testing
+  - contract validation
+  - regression testing
+- name: mlops
+  level: intermediate
+  years: 1
+  category: machine learning and ai
+  evidence_refs:
+  - proj_customer_churn_azureml
+  sub_skills:
+  - training pipelines
+  - model promotion
+  - deployment workflows
+  - monitoring
+  - retraining handoff
+- name: mlflow
+  level: beginner
+  years: 1
+  category: machine learning and ai
+  evidence_refs:
+  - proj_customer_churn_azureml
+  sub_skills:
+  - experiment tracking
+  - model packaging
+  - model lifecycle support
+- name: analytics engineering
+  level: intermediate
+  years: 1
+  category: data engineering and analytics engineering
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - modular sql transformations
+  - analytics-ready datasets
+  - semantic modeling
+  - data quality
+- name: data engineering
+  level: intermediate
+  years: 1
+  category: data engineering and analytics engineering
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  - cert_de_zoomcamp_2026
+  sub_skills:
+  - elt pipelines
+  - warehouse transformations
+  - pipeline orchestration
+  - data quality
+- name: google bigquery ml
+  level: beginner
+  years: 1
+  category: data platforms
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - in-warehouse machine learning
+  - model training
+  - scoring
+  - ml outputs for analytics
+- name: bruin
+  level: intermediate
+  years: 1
+  category: data engineering and analytics engineering
+  evidence_refs:
+  - proj_ecommerce_analytics_bruin
+  sub_skills:
+  - pipeline orchestration
+  - sql asset management
+  - environment configuration
+  - workflow validation
+projects:
+- id: proj_fitcv
+  name: FitCV
+  url: https://github.com/longdang193/fitcv
+  duration: 2026-03 — present
+  domain_tags:
+  - hr tech
+  - cv generation
+  - job matching
+  - decision support
+  responsibility_themes:
+  - product design
+  - pipeline architecture
+  - matching logic
+  - evaluation design
+  - observability
+  - process automation
+  - preference optimization
+  - ranking policy optimization
+  - decision support
+  skills:
+  - python
+  - llm workflow design
+  - prompt engineering
+  - ai agent orchestration
+  - multi-agent orchestration
+  - llm application development
+  - ai-assisted software development
+  - fastapi
+  - sqlite
+  - yaml configuration
+  - workflow orchestration
+  - system design
+  - workflow automation
+  - inverse optimization
+  - preference learning
+  - ranking policy optimization
+  - decision support
+  tech_stack:
+  - 'Backend API: Python, FastAPI, Uvicorn'
+  - 'Persistence: SQLite'
+  - 'Execution: serialized in-process runtime; Redis + RQ supported for server workflows'
+  - 'LLM runtime: OpenAI, OpenAI-compatible providers'
+  - 'Frontend: React, TypeScript, Vite'
+  - 'Configuration: YAML, environment variables'
+  - 'Testing: pytest, Vitest, Playwright'
+  business_value: >
+    Built an AI-assisted job-matching and CV-generation pipeline that turns noisy job inputs into structured, reviewable
+    outputs through staged filtering, shortlisting, ranking, evidence analysis, generation, validation, and artifact-backed
+    inspection. The workflow limits unnecessary late-stage AI processing through deterministic gates and keeps run
+    decisions, diagnostics, and generated outputs traceable for review.
+  highlights:
+  - Designed a staged workflow that filters, evaluates, and refines job opportunities before CV generation, keeping
+    expensive late-stage processing focused on stronger candidates.
+  - Combined deterministic eligibility rules, vector-based shortlisting, AI ranking, and evidence-based CV analysis
+    so match decisions can be inspected before generation.
+  - Added stage gates and validation checks to catch unsupported matches and output issues before final CV delivery.
+  - Persisted run, job, stage, and artifact evidence so filtered, blocked, failed, and review-required outcomes
+    remain inspectable.
+  - Used AI coding agents in Git-tracked development workflows for implementation, multi-agent delegation, testing,
+    independent review, and release verification, with evidence-backed changes and human-controlled acceptance.
+  - Used configuration-owned policies and routing so matching and generation behavior can be adjusted without rewriting
+    core stage logic.
+  - Implemented a store-backed inverse-optimization and preference-learning workflow that converts user ratings
+    into decision episodes, evaluates preference residuals, solves candidate policy updates, applies promotion gates,
+    and protects personalized ranking from stale evidence or configuration changes.
+- id: proj_project_os_starter
+  name: Project OS Starter — Governed Multi-Agent Development
+  url: https://github.com/longdang193/project-OS-starter
+  duration: 2026-04 — present
+  domain_tags:
+  - agentic ai
+  - developer tooling
+  - software engineering
+  - workflow automation
+  responsibility_themes:
+  - multi-agent orchestration
+  - runtime governance
+  - delegation architecture
+  - lifecycle verification
+  - git workspace boundaries
+  - verification and evidence
+  - capability control
+  skills:
+  - python
+  - ai agent orchestration
+  - ai-assisted software development
+  - workflow automation
+  - git
+  - github actions
+  - pytest
+  tech_stack:
+  - 'Orchestration: Herdr'
+  - 'Agent runtimes: Codex, DeepAgents'
+  - 'Implementation and validation: Python, pytest'
+  - 'Workspace boundaries: Git, Git worktrees where isolation requires them'
+  - 'Configuration: TOML, YAML, JSON'
+  - 'Automation and setup: PowerShell, Bash'
+  business_value: >
+    Built a reusable starter and contract layer for governed multi-agent software development, defining profile-based
+    assignment, bounded execution, controlled tool access, Git and workspace boundaries, lifecycle observation, and
+    evidence-backed acceptance across multiple coding runtimes.
+  highlights:
+  - Designed shared profile and configuration conventions for repeatable agent assignment, task ownership, and runtime selection.
+  - Built and hardened runtime tooling for bounded dispatch, task delivery, lifecycle observation, attempt-safe evidence, and cleanup.
+  - Defined controlled capability selection and workspace boundaries to make delegated changes easier to inspect and review.
+  - Added regression-tested completion handling so stale, ambiguous, or incomplete runtime observations are not treated as successful task completion.
+- id: proj_customer_churn_azureml
+  name: Customer Churn Prediction on Azure ML
+  url: https://github.com/longdang193/customer-churn-prediction-azureml-public
+  duration: 2025-10 — 2026-04
+  domain_tags:
+  - customer analytics
+  - cloud machine learning
+  responsibility_themes:
+  - ml platform architecture
+  - cloud orchestration
+  - training and HPO strategy
+  - model promotion and release governance
+  - deployment architecture
+  - monitoring and retraining lifecycle design
+  - artifact-first observability
+  - technical system documentation
+  skills:
+  - python
+  - azure machine learning
+  - mlops
+  - machine learning pipelines
+  - hyperparameter tuning
+  - model registry
+  - mlflow
+  - model deployment
+  - online inference
+  - model monitoring
+  - data validation
+  - drift detection
+  - yaml configuration
+  - pytest
+  - docker
+  tech_stack:
+  - 'Language/runtime: Python'
+  - 'Cloud ML platform: Azure Machine Learning SDK v2'
+  - 'Experiment tracking and model packaging: MLflow'
+  - 'Data validation and drift checks: batch validation and bounded drift-gating workflow'
+  - 'Configuration: YAML'
+  - 'Testing: pytest'
+  - 'Deployment/runtime: Managed online endpoints on Azure ML'
+  - 'Containerization: Docker'
+  - 'Documentation and governance: Markdown, contract-driven docs'
+  business_value: >
+    Built a production-minded Azure ML churn workflow covering data validation, training and HPO, candidate-vs-baseline
+    promotion, optional managed deployment, monitoring, and retraining handoff. Used explicit stage boundaries and
+    artifact-backed decisions to make pipeline behavior reproducible and reviewable.
+  highlights:
+  - Built an end-to-end Azure ML churn workflow covering data validation, feature preparation, fixed training or
+    HPO, promotion, deployment, monitoring, and retraining handoff.
+  - Separated exploratory tuning from repeatable production training to make model development safer and easier
+    to reproduce.
+  - Added a candidate-vs-baseline promotion step before registration and deployment, improving release control and
+    model governance.
+  - Created bounded run artifacts, promotion decisions, release records, and monitoring outputs to make pipeline
+    outcomes traceable, reviewable, and auditable without relying on noisy cloud logs.
+  - Structured monitoring to evaluate release evidence first and optional capture evidence second, improving post-deployment
+    reliability and operational clarity.
+  - Added data validation and drift checks before training to reduce risk of training models on degraded or shifted
+    datasets.
+- id: proj_ecommerce_analytics_bruin
+  name: GA4 Ecommerce Analytics Pipeline (Bruin)
+  url: https://github.com/longdang193/ecommerce-analytics-bruin-public
+  duration: 2026-01 — 2026-04
+  domain_tags:
+  - ecommerce
+  - data analytics
+  - decision support
+  responsibility_themes:
+  - pipeline architecture
+  - data product design
+  - analytics modeling
+  - workflow orchestration
+  - quality and traceability
+  - insight enablement
+  skills:
+  - sql
+  - bruin
+  - google bigquery
+  - google bigquery ml
+  - analytics engineering
+  - data engineering
+  - data modeling
+  - system design
+  tech_stack:
+  - 'Pipeline orchestration: Bruin'
+  - 'Transformation logic: SQL'
+  - 'Analytical warehouse: BigQuery'
+  - 'In-warehouse machine learning: BigQuery ML'
+  - 'Workflow automation: GitHub Actions'
+  - 'BI serving path: Cube Cloud PostgreSQL-compatible SQL API, Looker Studio'
+  - 'Source control: Git, GitHub'
+  business_value: >
+    Built end-to-end ecommerce analytics pipeline that transforms GA4 public ecommerce data into trusted, decision-ready
+    datasets, in-warehouse ML outputs, and governed semantic-layer access for reporting and analysis. Project improves
+    trust in business metrics by organizing transformations into traceable stages, centralizing business logic in
+    warehouse-backed assets, and creating repeatable analytics workflows that are easier to validate and maintain.
+  highlights:
+  - Designed staged Bruin pipeline that transforms GA4 ecommerce source data in BigQuery into reusable analytical
+    datasets for reporting, monitoring, and downstream consumption.
+  - Structured SQL transformations as modular pipeline assets across staging, intermediate, marts, ML, and observability
+    layers, making workflow behavior easier to trace and validate.
+  - Built business-facing models around revenue performance, order behavior, and customer activity, improving usefulness
+    of downstream analysis and decision support.
+  - Used BigQuery ML to extend pipeline value beyond reporting by incorporating in-warehouse training and scoring
+    into analytics workflow.
+  - Added validation, observability assets, and GitHub Actions workflows to improve data quality, traceability,
+    and repeatable pipeline execution.
+  - Separated orchestration, warehouse transformation, semantic serving, and BI access concerns to support cleaner
+    long-term maintenance and more reliable metric delivery.
+certifications:
+- id: cert_ml_zoomcamp_2026
+  name: Machine Learning Zoomcamp
+  issuer: DataTalks.Club
+  year: 2026-02
+  expiry: null
+  url: https://certificate.datatalks.club/ml-zoomcamp/2025/e92b27fc95efc43f1a029ee3d4b62393a47d6f79.pdf
+- id: cert_de_zoomcamp_2026
+  name: Data Engineering Zoomcamp
+  issuer: DataTalks.Club
+  year: 2026-04
+  expiry: null
+  url: https://certificate.datatalks.club/dezoomcamp/2026/e92b27fc95efc43f1a029ee3d4b62393a47d6f79.pdf
+- id: cert_azure_ai_engineer_associate
+  name: 'Microsoft Certified: Azure AI Engineer Associate'
+  issuer: Microsoft
+  year: 2026-03
+  expiry: 2027-03
+  credential_id: C0A33A6887447994
+  url: https://learn.microsoft.com/api/credentials/share/en-us/longdang-5399/C0A33A6887447994?sharingId=F2DC4945ABAACE45
+- id: cert_datacamp_data_analyst_power_bi_2026
+  name: Data Analyst in Power BI
+  issuer: DataCamp
+  year: 2026-06
+  expiry: null
+  credential_id: bedba99d6b2e3abb23c467ceffd826b1df7cbff4
+  url: https://www.datacamp.com/completed/statement-of-accomplishment/track/bedba99d6b2e3abb23c467ceffd826b1df7cbff4
+- id: cert_datacamp_git_fundamentals_2026
+  name: Git Fundamentals
+  issuer: DataCamp
+  year: 2026-06
+  expiry: null
+  credential_id: 9f1ef2d218d3525d091c5ad1b1e8a1c65ab8878a
+  url: https://www.datacamp.com/completed/statement-of-accomplishment/track/9f1ef2d218d3525d091c5ad1b1e8a1c65ab8878a
+languages:
+- id: lang_vi
+  name: Vietnamese
+  native: true
+- id: lang_en
+  name: English
+  read: C1
+  write: C1
+  speak: C1
+  notes: Professional working proficiency
+  evidence_refs: []
+- id: lang_de
+  name: German
+  read: B1
+  write: B1
+  speak: B1
+  notes: Intermediate working proficiency
+  evidence_refs: []
+achievements: []
+interests: []
+volunteering: []
+preferences:
+  target_role: data analyst
+  role_families:
+  - data analytics
+  - business intelligence
+  - business analytics
+  - product analytics
+  - marketing analytics
+  - customer analytics
+  - commercial analytics
+  - operations analytics
+  - reporting analytics
+  - analytics engineering
+  - data science
+  - customer_success
+  - product_operations
+  - operations
+  - business_development
+  - sales_support
+  - growth
+  location_types:
+  - remote
+  - hybrid
+  - onsite
+  locations: []
+  domains:
+  - retail
+  - consumer goods
+  - ecommerce
+  - technology
+  - saas
+  - marketplace
+  - fmcg
+  - supply chain
+  - logistics
+  - hr tech
+  - healthcare
+  - transportation
+  - cleantech
+  seniority_target: junior
+  salary_range: null
+  notice_period: null
+  exclude_contract_types: []
+  exclude_experience_levels: []
