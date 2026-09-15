@@ -5,7 +5,7 @@ import { buildMarkdown } from '../build-cv-markdown.mjs';
 
 const TEMPLATE = resolve('templates/cv-template.long-dang.md');
 
-test('buildMarkdown renders skill lists in sentence case at line start', () => {
+test('buildMarkdown preserves skill capitalization at line start', () => {
   const markdown = buildMarkdown({
     name: 'Jane Doe',
     summary: 'Analytics candidate.',
@@ -20,9 +20,9 @@ test('buildMarkdown renders skill lists in sentence case at line start', () => {
     ],
   }, TEMPLATE);
 
-  assert.match(markdown, /\*\*business\/domain knowledge:\*\* process improvement, Stakeholder communication, Cross-functional collaboration/);
-  assert.match(markdown, /\*\*programming languages:\*\* python, SQL/);
-  assert.match(markdown, /\*\*tools\/frameworks:\*\* git, FastAPI, GitHub Actions/);
+  assert.match(markdown, /\*\*business\/domain knowledge:\*\* Process improvement, Stakeholder communication, Cross-functional collaboration/);
+  assert.match(markdown, /\*\*programming languages:\*\* Python, SQL/);
+  assert.match(markdown, /\*\*tools\/frameworks:\*\* Git, FastAPI, GitHub Actions/);
 });
 
 test('buildMarkdown renders configured CV template without changing its HTML structure', () => {

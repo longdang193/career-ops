@@ -11,6 +11,7 @@ import {
   validatePayloadLimits,
   validateRenderedWordCount,
   validateTailoringMetadata,
+  formatSkillItems,
 } from '../lib/document-rules.mjs';
 
 const PROFILE = {
@@ -92,6 +93,10 @@ test('active profile uses requested CV and cover word ranges', () => {
   assert.deepEqual(rules.cv.maxWords, 630);
   assert.deepEqual(rules.coverLetter.minWords, 250);
   assert.deepEqual(rules.coverLetter.maxWords, 350);
+});
+
+test('formatSkillItems preserves skill capitalization', () => {
+  assert.equal(formatSkillItems(['SQL', 'Power BI', 'Git']), 'SQL, Power BI, Git');
 });
 
 test('profile example carries complete document policy including shared audit settings', () => {
